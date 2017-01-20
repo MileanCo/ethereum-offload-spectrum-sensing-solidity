@@ -2,9 +2,9 @@ pragma solidity ^0.4.0;
 contract SLA {
 
     struct Provider {
-        string locationAddress;
+        string id;
         uint costPerKb;
-        uint penaltyPerMb;
+        uint penaltyPerKb;
         uint debit;
         uint infractions;
         // any other relevant parameter to identify the small cell provider
@@ -17,7 +17,8 @@ contract SLA {
     
     event InsufficientThroughput(address indexed _provider, 
                                uint indexed _timestamp,
-                               uint _amountInMb);
+                               uint indexed _qci,
+                               uint _amountInKb);
     event PeriodicPayout(address indexed _provider,
                          uint indexed _timestamp,
                          uint trafficInKb);
@@ -38,14 +39,14 @@ contract SLA {
     }
     
     /// Add a new small cell provider to the list
-    function registerProvider(address _provider, string _location, 
-                 uint _costPerKb, uint _penaltyPerMb) ownerOnly returns(bool) {
+    function registerProvider(address _provider, string _id, 
+                 uint _costPerKb, uint _penaltyPerKb) ownerOnly returns(bool) {
         // Check if a provider with that address was already registered
         if (providers[_provider].costPerKb != 0) {
             return false;
         }
-        providers[_provider] = Provider({locationAddress: _location, 
-            costPerKb: _costPerKb, penaltyPerMb: _penaltyPerMb, debit: 0,
+        providers[_provider] = Provider({id: _id, 
+            costPerKb: _costPerKb, penaltyPerKb: _penaltyPerKb, debit: 0,
             infractions: 0
         });
         return true;
@@ -91,18 +92,18 @@ contract SLA {
      */
     function increaseFunds() payable {}
     
-    /* Notify the provider of a capacity breach in the SLA. 
+    /* Notify the provider of a throughput breach in the SLA. 
      * Deducts the penalty from the pending withdrawals if sufficient, or 
      * increases the debit amount of the provider otherwise.
      */
-    function throughputBreach(address _provider, 
-                              uint _amountInMb) ownerOnly returns(bool) {
-        InsufficientThroughput(_provider, block.timestamp, _amountInMb);
+    function throughputBreach(address _provider, uint _qci,
+                              uint _amountInKb) ownerOnly returns(bool) {
+        InsufficientThroughput(_provider, block.timestamp, _qci, _amountInKb);
         providers[_provider].infractions += 1;
         if (providers[_provider].infractions >= maxInfractions) {
             blockProvider(_provider);
         }
-        uint payment = providers[_provider].penaltyPerMb * _amountInMb;
+        uint payment = providers[_provider].penaltyPerKb * _amountInKb;
         if (pendingWithdrawals[_provider] >= payment) {
             pendingWithdrawals[_provider] -= payment;
             return true;
