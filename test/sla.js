@@ -61,6 +61,25 @@ contract('SLA', function(accounts) {
     });
   });
 
+  it("should fire event when notifyPayment", function() {
+    //TODO: check that the pendingWithdrawals increases after the call
+    return SLA.deployed().then(function(instance) {
+      return instance.notifyPayment(accounts[0], 10, {from: accounts[0]});
+    }).then(function(notify_txid){
+      var found = false;
+      for (var i = 0; i < notify_txid.logs.length; i++) {
+        var log = notify_txid.logs[i];
+        if (log.event == "PeriodicPayout") {
+          found = true;
+          break;
+        }
+      }
+      assert.isTrue(found);
+    }).catch(function(error){
+      console.log(error);
+    });
+  });
+
   it("should reject a second registration for the same provider", function() {
     return SLA.deployed().then(function(instance) {
       return instance.registerProvider(accounts[0], 0, 1, 1,
@@ -97,10 +116,6 @@ contract('SLA', function(accounts) {
   });
 
   it("should throw when we try to block an unregistered provider", function() {
-    assert.isTrue(false);
-  });
-
-  it("should increase withdrawals and fire event when notifyPayment", function() {
     assert.isTrue(false);
   });
 
