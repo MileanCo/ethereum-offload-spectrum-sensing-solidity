@@ -51,11 +51,11 @@ contract('SLA', function(accounts) {
       return instance.registerProvider(accounts[0], 0, 1, 1,
                                        {from: accounts[0]});
     }).then(function(tx_id){
-      // assert.isTrue(registered, "registerProvider returned false")
       var found = false;
       for (var i = 0; i < tx_id.logs.length; i++) {
         var log = tx_id.logs[i];
         if (log.event == "RegisteredProvider") {
+          assert.equal(log.args._provider, accounts[0]);
           found = true;
           break;
         }
@@ -70,13 +70,13 @@ contract('SLA', function(accounts) {
   it("should fire event and update pendingWithdrawals when notifyPayment is called", function() {
     var amount = 10;
     var instance;
-    var account_one_starting_pending;
-    var account_one_ending_pending;
+    var account_zero_starting_pending;
+    var account_zero_ending_pending;
     return SLA.deployed().then(function(inst) {
       instance = inst;
-      return instance.pendingWithdrawals.call(accounts[1]);
+      return instance.pendingWithdrawals.call(accounts[0]);
     }).then(function(pending){
-      account_one_starting_pending = pending.toNumber();
+      account_zero_starting_pending = pending.toNumber();
       return instance.notifyPayment(accounts[0], amount, {from: accounts[0]});
     }).then(function(notify_txid){
       var found = false;
@@ -84,16 +84,15 @@ contract('SLA', function(accounts) {
         var log = notify_txid.logs[i];
         if (log.event == "PeriodicPayout") {
           found = true;
-          //FIXME: log.event.args returns undefined when testing for some reason
-          // assert.equal(log.event.args._tputInKbps.toNumber(), amount);
+          assert.equal(log.args._tputInKbps.toNumber(), amount);
           break;
         }
       }
       assert.isTrue(found);
-      return instance.pendingWithdrawals.call(accounts[1]);
+      return instance.pendingWithdrawals.call(accounts[0]);
     }).then(function(newPending){
-      account_one_ending_pending = newPending.toNumber();
-      assert.equal(account_one_ending_pending, account_one_starting_pending + amount);
+      account_zero_ending_pending = newPending.toNumber();
+      assert.equal(account_zero_ending_pending, account_zero_starting_pending + amount);
     }).catch(function(error){
       console.log(error);
       assert.fail();
