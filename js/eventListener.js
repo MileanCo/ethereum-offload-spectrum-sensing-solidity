@@ -18,7 +18,7 @@ return SLA.deployed().then(function(instance){
   // watch for payout notifications
   return payoutEvent = sla.PeriodicPayout([{_provider: provider}], function(error, result){
     if (!error) {
-      console.log('New PeriodicPayout event caught for an average throughput of %d Kbps, withdrawing', result.args._trafficInKb);
+      console.log('New PeriodicPayout event caught for an average throughput of %d Kbps, withdrawing', result.args._tputInKbps.toNumber();
       sla.withdraw({from: provider}).then(function(withdrawTx){
         console.log("New balance of account 1: %s", web3.eth.getBalance(accounts[1]).toString(10));
       }).catch(function(error) {
