@@ -21,7 +21,8 @@ contract SLA {
                                uint _amountInKbps);
     event PeriodicPayout(address indexed _provider,
                          uint indexed _timestamp,
-                         uint _tputInKbps);
+                         uint _tputInKbps,
+                         uint _payment);
     event InsufficientFunds(uint indexed _timestamp);
     event RegisteredProvider(address indexed _provider,
                              uint indexed _id,
@@ -73,14 +74,17 @@ contract SLA {
         uint payment = providers[_provider].costPerKbps * _tputInKbps;
         if (providers[_provider].debit >= payment) {
             providers[_provider].debit -= payment;
+            PeriodicPayout(_provider, block.timestamp, _tputInKbps, 0);
         } else if (providers[_provider].debit > 0) {
             uint difference = payment - providers[_provider].debit;
             providers[_provider].debit = 0;
             pendingWithdrawals[_provider] += difference;
+            PeriodicPayout(_provider, block.timestamp, _tputInKbps, difference);
         } else {
             pendingWithdrawals[_provider] += payment;
+            PeriodicPayout(_provider, block.timestamp, _tputInKbps, payment);
         }
-        PeriodicPayout(_provider, block.timestamp, _tputInKbps);
+
     }
 
     /* Allows providers to withdraw any outstanding credit after the firing of
