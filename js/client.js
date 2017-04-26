@@ -15,25 +15,13 @@ const contract = require('truffle-contract')
 let SLA = contract(sla_artifacts);
 SLA.setProvider(web3.currentProvider);
 var sla;
-return SLA.deployed().then(function(instance){
+SLA.deployed().then(function(instance){
   sla = instance;
-  return sla.registerProvider(provider, 0, 0, 1, {from: owner});
+  return sla.registerProvider(provider, 1, 1, 1, {from: owner, gas: 999999});
 }).then(function(registeredTx){
   console.log("Balance of account 0: %s", web3.eth.getBalance(accounts[0]).toString(10));
   console.log("Balance of account 1: %s", web3.eth.getBalance(accounts[1]).toString(10));
-  // watch for payout notifications
-  return payoutEvent = sla.PeriodicPayout([{_provider: provider}], function(error, result){
-    if (!error) {
-      console.log('New PeriodicPayout event caught for an average throughput of %d Kbps, withdrawing', result.args._trafficInKb);
-      sla.withdraw({from: provider}).then(function(withdrawTx){
-        console.log("New balance of account 1: %s", web3.eth.getBalance(accounts[1]).toString(10));
-      }).catch(function(error) {
-        console.log(error);
-      });
-    } else {
-      console.log(error);
-    }
-  });
+
 }).catch(function(error){
   console.log(error);
 });
@@ -73,8 +61,10 @@ function avgThroughput() {
 }
 
 function payout(throughput) {
-  return SLA.deployed().then(function(instance) {
-    instance.notifyPayment(provider, throughput * 1024, {from: owner});
+  var kbps_tput = throughput * 1024;
+  return sla.notifyPayment(provider, kbps_tput, {from: owner})
+  .then(function(notify_txid){
+    console.log("Payment notification event fired.");
   }).catch(function(error){
     console.log(error);
   });
