@@ -3,8 +3,8 @@ contract SLA {
 
     struct Provider {
         uint id;
-        uint costPerKb;
-        uint penaltyPerKb;
+        uint costPerKbps;
+        uint penaltyPerKbps;
         uint debit;
         uint infractions;
         // any other relevant parameter to identify the small cell provider
@@ -12,16 +12,16 @@ contract SLA {
 
     address public _owner;
     mapping(address => Provider) providers;
-    mapping (address => uint) pendingWithdrawals;
+    mapping (address => uint) public pendingWithdrawals;
     uint constant maxInfractions = 3;
 
     event InsufficientThroughput(address indexed _provider,
                                uint indexed _timestamp,
                                uint indexed _qci,
-                               uint _amountInKb);
+                               uint _amountInKbps);
     event PeriodicPayout(address indexed _provider,
                          uint indexed _timestamp,
-                         uint trafficInKb);
+                         uint _tputInKbps);
     event InsufficientFunds(uint indexed _timestamp);
     event RegisteredProvider(address indexed _provider,
                              uint indexed _id,
@@ -43,18 +43,18 @@ contract SLA {
 
     /// Add a new small cell provider to the list
     function registerProvider(address _provider, uint _id,
-                 uint _costPerKb, uint _penaltyPerKb) public ownerOnly returns(bool) {
+                 uint _costPerKbps, uint _penaltyPerKbps) public ownerOnly returns(bool) {
         // Check if a provider with that address was already registered
-        if (providers[_provider].costPerKb != 0) {
+        if (providers[_provider].costPerKbps != 0) {
             return false;
         }
-        // Check that _costPerKb and _penaltyPerKb are positive
-        if (_costPerKb <= 0 || _penaltyPerKb <= 0) {
+        // Check that _costPerKbps and _penaltyPerKbps are positive
+        if (_costPerKbps <= 0 || _penaltyPerKbps <= 0) {
             return false;
         }
         // Register the new provider
         providers[_provider] = Provider({id: _id,
-            costPerKb: _costPerKb, penaltyPerKb: _penaltyPerKb, debit: 0,
+            costPerKbps: _costPerKbps, penaltyPerKbps: _penaltyPerKbps, debit: 0,
             infractions: 0
         });
         RegisteredProvider(_provider, _id, block.timestamp);
@@ -65,12 +65,12 @@ contract SLA {
      * Uses the withdraw pattern to minimize security risks. Note that we first
      * deduct from any outstanding debit from the provider (e.g. due to breaches)
      */
-    function notifyPayment(address _provider, uint _trafficInKb) ownerOnly {
+    function notifyPayment(address _provider, uint _tputInKbps) ownerOnly {
         // Check that a provider with that address was previously registered
-        if (providers[_provider].costPerKb == 0) {
+        if (providers[_provider].costPerKbps == 0) {
             throw;
         }
-        uint payment = providers[_provider].costPerKb * _trafficInKb;
+        uint payment = providers[_provider].costPerKbps * _tputInKbps;
         if (providers[_provider].debit >= payment) {
             providers[_provider].debit -= payment;
         } else if (providers[_provider].debit > 0) {
@@ -80,7 +80,7 @@ contract SLA {
         } else {
             pendingWithdrawals[_provider] += payment;
         }
-        PeriodicPayout(_provider, block.timestamp, _trafficInKb);
+        PeriodicPayout(_provider, block.timestamp, _tputInKbps);
     }
 
     /* Allows providers to withdraw any outstanding credit after the firing of
@@ -110,18 +110,18 @@ contract SLA {
      * increases the debit amount of the provider otherwise.
      */
     function throughputBreach(address _provider, uint _qci,
-                              uint _amountInKb) ownerOnly returns(bool) {
+                              uint _amountInKbps) ownerOnly returns(bool) {
         // Check that a provider with that address was previously registered
-        if (providers[_provider].costPerKb == 0) {
+        if (providers[_provider].costPerKbps == 0) {
             return false;
         }
-        InsufficientThroughput(_provider, block.timestamp, _qci, _amountInKb);
+        InsufficientThroughput(_provider, block.timestamp, _qci, _amountInKbps);
         providers[_provider].infractions += 1;
         if (providers[_provider].infractions >= maxInfractions) {
             blockProvider(_provider);
             return true;
         }
-        uint payment = providers[_provider].penaltyPerKb * _amountInKb;
+        uint payment = providers[_provider].penaltyPerKbps * _amountInKbps;
         if (pendingWithdrawals[_provider] >= payment) {
             pendingWithdrawals[_provider] -= payment;
         } else {
@@ -135,7 +135,7 @@ contract SLA {
     /* block a provider, effectively removing it from the list */
     function blockProvider(address _provider) ownerOnly {
         // Check that a provider with that address was already registered
-        if (providers[_provider].costPerKb == 0) {
+        if (providers[_provider].costPerKbps == 0) {
             throw;
         }
         delete providers[_provider];
