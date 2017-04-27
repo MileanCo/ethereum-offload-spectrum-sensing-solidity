@@ -179,12 +179,31 @@ contract('SLA', function(accounts) {
       if(error.toString().indexOf("invalid JUMP") == -1) {
         console.log(error);
         assert.fail();
-      }      
+      }
+    });
+  });
+
+  it("should allow the owner to change ownership of the contract", function() {
+    return SLA.deployed().then(function(instance) {
+      return instance.changeOwner(accounts[1], {from: accounts[0]});
+    }).then(function(tx_id) {
+      var found = false;
+      for (var i = 0; i < tx_id.logs.length; i++) {
+        var log = tx_id.logs[i];
+        if (log.event == "OwnershipChange" && log.args._newOwner == accounts[1]) {
+            found = true;
+        }
+      }
+      assert.isTrue(found);
+      return instance._owner.call({from: accounts[1]});
+    }).then(function(address) {
+      assert.equal(address, accounts[1], "accounts[1] wasn't the new owner of the contract");
+    }).catch(function(error){
+      console.log(error);
+      assert.fail();
     });
   });
 
   it("should self destruct and send all funds to the owner");
-
-  it("should allow the owner to change ownership of the contract")
 
 });
