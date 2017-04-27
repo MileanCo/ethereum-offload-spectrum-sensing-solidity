@@ -29,6 +29,7 @@ contract SLA {
                              uint indexed _timestamp);
     event BlockedProvider(address indexed _provider,
                           uint indexed _timestamp);
+    event OwnershipChange(address indexed _newOwner);
 
     /// Create a new SLA contract, specifies the address of the owner
     function SLA() {
@@ -144,5 +145,18 @@ contract SLA {
         }
         delete providers[_provider];
         BlockedProvider(_provider, block.timestamp);
+    }
+
+    // Destroy the contract and return funds to owner
+    function selfDestruct() public ownerOnly {
+      selfdestruct(_owner);
+    }
+
+    // Change ownership of the contract
+    function changeOwner(address _newOwner) public ownerOnly {
+      if (_owner != _newOwner) {
+        _owner = _newOwner;
+        OwnershipChange(_newOwner);
+      }
     }
 }
