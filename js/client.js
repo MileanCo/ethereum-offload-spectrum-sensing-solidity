@@ -22,7 +22,7 @@ SLA.deployed().then(function(instance){
 }).then(function(registeredTx){
   console.log("Balance of account 0: %s", web3.fromWei(web3.eth.getBalance(accounts[0])).toString(10));
   console.log("Balance of account 1: %s", web3.fromWei(web3.eth.getBalance(accounts[1])).toString(10));
-  if (true) { // if (web3.fromWei(sla.getBalance()) < 10) - getBalance() is not a function!
+  if (web3.eth.fromWei(web3.eth.getBalance(SLA.address)) < 5) { 
     return sla.increaseFunds({from: owner, value: web3.toWei(10, "ether")}).then(function(tx_id){});
   }
 }).catch(function(error){
