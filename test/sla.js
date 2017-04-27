@@ -105,14 +105,11 @@ contract('SLA', function(accounts) {
 
   it("should allow withdrawal and remove pending funds when withdraw", function() {
     //TODO: check that the contract was charged, and that no InsufficientFunds was thrown
-    // var account_zero_starting_balance;
-    // var account_zero_ending_balance;
     var account_one_starting_balance;
     var account_one_ending_balance;
     var account_one_starting_pending;
     return SLA.deployed().then(function(inst) {
       instance = inst;
-      // account_zero_starting_balance = web3.eth.getBalance(accounts[0]);
       account_one_starting_balance = web3.fromWei(web3.eth.getBalance(accounts[1]));
       console.log("starting balance", account_one_starting_balance.toString(10));
       return instance.pendingWithdrawals.call(accounts[1]);
@@ -123,15 +120,12 @@ contract('SLA', function(accounts) {
     }).then(function(funds_txid){
       return instance.withdraw({from: accounts[1]});
     }).then(function(withdraw_txid){
-      // console.log("transaction receipt: ", withdraw_txid);
-      // account_zero_ending_balance = web3.eth.getBalance(accounts[0]);
       var tx_cost = web3.fromWei(web3.toBigNumber(withdraw_txid.receipt.gasUsed).times(web3.eth.gasPrice));
       console.log("transaction cost", tx_cost.toString(10));
       account_one_ending_balance = web3.fromWei(web3.eth.getBalance(accounts[1]));
       console.log("ending balance", account_one_ending_balance.toString(10));
-      // assert.equal(account_zero_starting_balance - account_zero_ending_balance, new BigNumber(10), "account zero was not charged")
       var account_one_credit = account_one_ending_balance.minus(account_one_starting_balance);
-      // assert.equal(account_one_credit, account_one_starting_pending.minus(tx_cost), "account one was not credited");
+      assert.equal(account_one_credit, account_one_starting_pending.minus(tx_cost), "account one was not credited");
       return instance.pendingWithdrawals.call(accounts[1]);
     }).then(function(newPending){
       assert.equal(newPending.toNumber(), 0);
@@ -165,10 +159,8 @@ contract('SLA', function(accounts) {
       var found = false;
       for (var i = 0; i < tx_id.logs.length; i++) {
         var log = tx_id.logs[i];
-        if (log.event == "BlockedProvider") {
-          // if (log.event._provider == accounts[0]) {
+        if (log.event == "BlockedProvider" && log.args._provider == accounts[1]) {
             found = true;
-          // }
         }
       }
       assert.isTrue(found);
@@ -178,7 +170,18 @@ contract('SLA', function(accounts) {
     });
   });
 
-  it("should throw when we try to block an unregistered provider");
+  it("should throw when we try to block an unregistered provider", function() {
+    return SLA.deployed().then(function(instance) {
+      return instance.blockProvider(accounts[1], {from: accounts[0]});
+    }).then(function(tx_id) {
+      assert.fail(false, true, "Expected an exception, found none");
+    }).catch(function(error){
+      if(error.toString().indexOf("invalid JUMP") == -1) {
+        console.log(error);
+        assert.fail();
+      }      
+    });
+  });
 
   it("should self destruct and send all funds to the owner");
 
