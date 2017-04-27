@@ -9,6 +9,7 @@ if (typeof web3 != 'undefined') {
 var accounts = web3.eth.accounts;
 var owner = accounts[0];
 var provider = accounts[1];
+const _costPerKbps = web3.toWei(1, 'szabo');
 // deploy contract and register provider
 const sla_artifacts = require('../build/contracts/SLA.json')
 const contract = require('truffle-contract')
@@ -17,11 +18,13 @@ SLA.setProvider(web3.currentProvider);
 var sla;
 SLA.deployed().then(function(instance){
   sla = instance;
-  return sla.registerProvider(provider, 1, 1, 1, {from: owner, gas: 999999});
+  return sla.registerProvider(provider, 1, _costPerKbps, _costPerKbps, {from: owner, gas: 999999});
 }).then(function(registeredTx){
-  console.log("Balance of account 0: %s", web3.eth.getBalance(accounts[0]).toString(10));
-  console.log("Balance of account 1: %s", web3.eth.getBalance(accounts[1]).toString(10));
-
+  console.log("Balance of account 0: %s", web3.fromWei(web3.eth.getBalance(accounts[0])).toString(10));
+  console.log("Balance of account 1: %s", web3.fromWei(web3.eth.getBalance(accounts[1])).toString(10));
+  if (true) { // if (web3.fromWei(sla.getBalance()) < 10) - getBalance() is not a function!
+    return sla.increaseFunds({from: owner, value: web3.toWei(10, "ether")}).then(function(tx_id){});
+  }
 }).catch(function(error){
   console.log(error);
 });
