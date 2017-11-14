@@ -1,11 +1,22 @@
-SLA-Solidity - a Service Level Agreement smart contract between small-cell
-owners and network operators.
+SLA to Offload Spectrum Sensing - to other nodes to increase efficiency of devices utilizing cognitive radio
 
-Copyright Emanuele Di Pascale (dipascae@tcd.ie), 2017
+Forked from https://arxiv.org/abs/1703.04502
 
-Developed as a proof-of-concept prototype for the paper "Smart Contract SLAs for
-Dense Small-Cell-as-a-Service" presented at the DySpan 2017 workshop "The
-Blockchain Bandwagon - The Spectrum Perspective".
-arXiv link to the paper: https://arxiv.org/abs/1703.04502
+# Setup
+1. Install [TruffleJS](https://github.com/trufflesuite/truffle)
+2. Install [TestRPC](https://github.com/ethereumjs/testrpc)
 
-Currently being reworked into a sliglthly more functional prototype. Stay tuned!
+# How to Run
+1. In a Terminal window, run 'testrpc'
+2. In a new Terminal window, run:
+3. truffle compile
+4. truffle migrate (this will 'connect' to your local instance of Ethereum (testrpc), utilizing the dev settings in truffle.js)
+5. truffle test
+
+
+# Some notes on Ethereum Blockchain, solidity, spectrum sensing, etc
+Contracts are like objects in OOP. Each new "transaction" would result in a new Contract being made between interested parties.
+When a user has finished sensing the spectrum, it will call methods on this contract object to send the result back to the original SU.
+This will trigger the payment of the original user to the one who did the work.
+
+Contracts are stored on the blockchain (database) as "Executable code", and other people can interact with it, depending on their role.
