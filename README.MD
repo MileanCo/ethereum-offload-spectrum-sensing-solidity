@@ -19,4 +19,4 @@ Contracts are like objects in OOP. Each new "transaction" would result in a new 
 When a user has finished sensing the spectrum, it will call methods on this contract object to send the result back to the original SU.
 This will trigger the payment of the original user to the one who did the work.
 
-Contracts are stored on the blockchain (database) as "Executable code", and other people can interact with it, depending on their role.
+Contracts are stored on the blockchain (database) as "Executable code", and other people can interact with it, depending on their role. This is what happens when you call 'truffle migrate', it moves the code onto the blockchain specified in the config (truffle.js)
