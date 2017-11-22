@@ -1,6 +1,7 @@
 pragma solidity ^0.4.0;
 contract SLA {
 
+    // is Provider the Helper ??
     struct Provider {
         uint id;
         uint costPerKbps;
@@ -27,11 +28,13 @@ contract SLA {
     event RegisteredProvider(address indexed _provider,
                              uint indexed _id,
                              uint indexed _timestamp);
+    // Removed Providers
     event BlockedProvider(address indexed _provider,
                           uint indexed _timestamp);
     event OwnershipChange(address indexed _newOwner);
 
-    /// Create a new SLA contract, specifies the address of the owner
+    //
+    /// Create a new SLA contract, specifies the address of the owner (owner is SU?? )
     function SLA() {
         _owner = msg.sender;
     }
@@ -76,16 +79,17 @@ contract SLA {
         if (providers[_provider].debit >= payment) {
             providers[_provider].debit -= payment;
             PeriodicPayout(_provider, block.timestamp, _tputInKbps, 0);
+
         } else if (providers[_provider].debit > 0) {
             uint difference = payment - providers[_provider].debit;
             providers[_provider].debit = 0;
             pendingWithdrawals[_provider] += difference;
             PeriodicPayout(_provider, block.timestamp, _tputInKbps, difference);
+
         } else {
             pendingWithdrawals[_provider] += payment;
             PeriodicPayout(_provider, block.timestamp, _tputInKbps, payment);
         }
-
     }
 
     /* Allows providers to withdraw any outstanding credit after the firing of
@@ -96,6 +100,7 @@ contract SLA {
         if (amount <= 0)
             return false;
         pendingWithdrawals[msg.sender] = 0;
+        // send Ether to the sender of this message
         if (msg.sender.send(amount)) {
             return true;
         } else {

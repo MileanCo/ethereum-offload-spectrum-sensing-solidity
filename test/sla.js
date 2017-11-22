@@ -113,22 +113,28 @@ contract('SLA', function(accounts) {
       account_one_starting_balance = web3.fromWei(web3.eth.getBalance(accounts[1]));
       console.log("starting balance", account_one_starting_balance.toString(10));
       return instance.pendingWithdrawals.call(accounts[1]);
+
     }).then(function(pending){
       account_one_starting_pending = web3.fromWei(pending);
       console.log("pending withdrawal", account_one_starting_pending.toString(10));
       return instance.increaseFunds({from: accounts[0], value: 2*pending});
+
     }).then(function(funds_txid){
       return instance.withdraw({from: accounts[1]});
+
     }).then(function(withdraw_txid){
       var tx_cost = web3.fromWei(web3.toBigNumber(withdraw_txid.receipt.gasUsed).times(web3.eth.gasPrice));
       console.log("transaction cost", tx_cost.toString(10));
       account_one_ending_balance = web3.fromWei(web3.eth.getBalance(accounts[1]));
       console.log("ending balance", account_one_ending_balance.toString(10));
+
       var account_one_credit = account_one_ending_balance.minus(account_one_starting_balance);
-      assert.equal(account_one_credit, account_one_starting_pending.minus(tx_cost), "account one was not credited");
+      assert.equal(account_one_credit.toString(10), account_one_starting_pending.minus(tx_cost).toString(10), "account one was not credited");
       return instance.pendingWithdrawals.call(accounts[1]);
+
     }).then(function(newPending){
       assert.equal(newPending.toNumber(), 0);
+
     }).catch(function(error){
       console.log(error);
       assert.fail();
