@@ -18,68 +18,38 @@ Forked from https://arxiv.org/abs/1703.04502
 7. node js/client.js
 
 # Example:
-Loquat:sla-solidity milean$ truffle compile
+Loquat:sla-solidity milean$ truffle compile<br>
 
-Loquat:sla-solidity milean$ truffle migrate
-
-Using network 'development'.
-
-Network up to date.
-
-Loquat:sla-solidity milean$
-
-Loquat:sla-solidity milean$ node js/client.js
-
-Balance of account 0: 99.629911599999734558
-
-Balance of account 1: 100.0080582
-
-Connection successful
-
-Requesting node: default
-
-Parsed Downlink throughput: 0.22
-
-Parsed Downlink throughput: 0.21
-
-Parsed Downlink throughput: 0.66
-
-Parsed Downlink throughput: 1.07
-
-Avg throughput over 5 seconds: 0.54
-
-Payment notification event fired.
-
-Parsed Downlink throughput: 0.2
-
-Parsed Downlink throughput: 0.21
-
-Parsed Downlink throughput: 0.59
-
-Parsed Downlink throughput: 1.08
-
+Loquat:sla-solidity milean$ truffle migrate<br>
+Using network 'development'.<br>
+Network up to date.<br>
+Loquat:sla-solidity milean$<br>
+Loquat:sla-solidity milean$ node js/client.js<br>
+Balance of account 0: 99.629911599999734558<br>
+Balance of account 1: 100.0080582<br>
+Connection successful<br>
+Requesting node: default<br>
+Parsed Downlink throughput: 0.22<br>
+Parsed Downlink throughput: 0.21<br>
+Parsed Downlink throughput: 0.66<br>
+Parsed Downlink throughput: 1.07<br>
+Avg throughput over 5 seconds: 0.54<br>
+Payment notification event fired.<br>
+Parsed Downlink throughput: 0.2<br>
+Parsed Downlink throughput: 0.21<br>
+Parsed Downlink throughput: 0.59<br>
+Parsed Downlink throughput: 1.08<br>
 Parsed Downlink throughput: 0.8
-
-Avg throughput over 5 seconds: 0.576
-
-Payment notification event fired.
-
-Parsed Downlink throughput: 0.4
-
-Parsed Downlink throughput: 0.49
-
-Parsed Downlink throughput: 4.02
-
-Parsed Downlink throughput: 1.67
-
-Parsed Downlink throughput: 0.78
-
-Avg throughput over 5 seconds: 1.472
-
-Payment notification event fired.
-
-Parsed Downlink throughput: 1.03
-
+<br>Avg throughput over 5 seconds: 0.576
+<br>Payment notification event fired.
+<br>Parsed Downlink throughput: 0.4
+<br>Parsed Downlink throughput: 0.49
+<br>Parsed Downlink throughput: 4.02
+<br>Parsed Downlink throughput: 1.67
+<br>Parsed Downlink throughput: 0.78
+<br>Avg throughput over 5 seconds: 1.472
+<br>Payment notification event fired.
+<br>Parsed Downlink throughput: 1.03<br>
 ^C
 
 # Some notes on Ethereum Blockchain, solidity, spectrum sensing, etc
