@@ -9,7 +9,7 @@ Forked from https://arxiv.org/abs/1703.04502
 # How to Run
 1. In a Terminal window, run 'testrpc'
 2. In a new Terminal window, run:
-3. cd <project download directory where truffle.js lives>
+3. cd "project download directory where truffle.js lives"
 4. truffle compile
 5. truffle migrate (this will 'connect' to your local instance of Ethereum (testrpc), utilizing the dev settings in truffle.js)
 6. truffle test
