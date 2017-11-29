@@ -5,13 +5,16 @@ contract('SLA', function(accounts) {
   const _costPerKbps = 1000000000000000; // 1 finney = 0.001 ether
 
   it("should save the address of the creator as the _owner", function() {
-    return SLA.deployed().then(function(instance) {
-      return instance._owner.call({from: accounts[0]});
-    }).then(function(address) {
-      assert.equal(address, accounts[0], "accounts[0] wasn't the owner of the contract");
-    }).catch(function(error){
-      console.log(error);
-      assert.fail();
+    return SLA.deployed().then(
+        function(instance) {
+          return instance._owner.call({from: accounts[0]});
+    }).then(
+        function(address) {
+          assert.equal(address, accounts[0], "accounts[0] wasn't the owner of the contract");
+    }).catch(
+        function(error){
+          console.log(error);
+          assert.fail();
     });
   });
 

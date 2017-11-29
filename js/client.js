@@ -10,24 +10,28 @@ var accounts = web3.eth.accounts;
 var owner = accounts[0];
 var provider = accounts[1];
 const _costPerKbps = web3.toWei(1, 'szabo');
+
 // deploy contract and register provider
 const sla_artifacts = require('../build/contracts/SLA.json')
 const contract = require('truffle-contract')
+
 let SLA = contract(sla_artifacts);
 SLA.setProvider(web3.currentProvider);
 var sla;
-SLA.deployed().then(function(instance){
+
+SLA.deployed().then(function(instance) {
   sla = instance;
   return sla.registerProvider(provider, 1, _costPerKbps, _costPerKbps, {from: owner, gas: 999999});
 }).then(function(registeredTx){
   console.log("Balance of account 0: %s", web3.fromWei(web3.eth.getBalance(accounts[0])).toString(10));
   console.log("Balance of account 1: %s", web3.fromWei(web3.eth.getBalance(accounts[1])).toString(10));
-  if (web3.eth.fromWei(web3.eth.getBalance(SLA.address)) < 5) { 
+  if (web3.eth.fromWei(web3.eth.getBalance(SLA.address)) < 5) {
     return sla.increaseFunds({from: owner, value: web3.toWei(10, "ether")}).then(function(tx_id){});
   }
 }).catch(function(error){
   console.log(error);
 });
+
 // Enter here the name of the node you want to listen to (eg dub, bcn0, bcn1, etc.)
 node_name = "default"
 time_interval = 1 * 5 * 1000; // interval in ms over which compute the throughput
@@ -40,6 +44,7 @@ ws.on('open', function() {
 });
 var is_first = true;
 var tput_values = [];
+
 setInterval(avgThroughput, time_interval);
 ws.on('message', function(data, flags) {
   if (is_first) {

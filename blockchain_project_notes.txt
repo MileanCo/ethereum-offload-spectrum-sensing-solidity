@@ -1,0 +1,17 @@
+
+toosl problsm scnearios
+
+
+challenges:
+	- picking algirthm
+ - algorithm: battery lvl, distance, 
+
+who will do what... 
+
+Goal / solution outline 
+
+	-> howto use ETH
+	-> logic /algorithm 
+
+Evaluation:
+	what to show / analyze 
