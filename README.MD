@@ -15,8 +15,8 @@ Forked from https://arxiv.org/abs/1703.04502
 6. truffle test
 
 # How to run simulations / scenarios
-6. npm install
-7. node js/client.js
+7. npm install
+8. node js/client.js
 
 # Example:
 Loquat:sla-solidity milean$ truffle compile<br>
