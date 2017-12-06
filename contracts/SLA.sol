@@ -47,8 +47,8 @@ contract SLA {
     }
 
     /// Add a new small cell provider to the list
-    function registerProvider(address _provider, uint _id,
-                 uint _costPerKbps, uint _penaltyPerKbps) public ownerOnly returns(bool) {
+    function registerProvider(address _provider, uint _id, uint _costPerKbps, uint _penaltyPerKbps)
+      public ownerOnly returns(bool) {
         // Check if a provider with that address was already registered
         if (providers[_provider].costPerKbps != 0) {
             return false;
