@@ -1,5 +1,5 @@
-var SLA = artifacts.require("./SLA.sol");
+var SensingService = artifacts.require("./SensingService.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(SLA);  
+  deployer.deploy(SensingService);
 };
