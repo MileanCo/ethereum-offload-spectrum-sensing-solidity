@@ -27,7 +27,8 @@
   "homepage": "https://github.com/MileanCo/sla-offload-spectrum-sensing-solidity",
   "dependencies": {
     "babel-polyfill": "^6.22.0",
-    "web3": "^0.20.2",
-    "truffle-contract": "^3.0.1"
+    "ganache-cli": "^6.0.3",
+    "truffle-contract": "^3.0.1",
+    "web3": "^0.20.2"
   }
 }
