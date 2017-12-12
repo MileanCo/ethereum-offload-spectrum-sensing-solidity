@@ -32,6 +32,8 @@ SLA.deployed().then(function(instance) {
   console.log(error);
 });
 
+//hej
+
 // Enter here the name of the node you want to listen to (eg dub, bcn0, bcn1, etc.)
 node_name = "default"
 time_interval = 1 * 5 * 1000; // interval in ms over which compute the throughput
