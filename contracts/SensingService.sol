@@ -6,7 +6,6 @@ contract SensingService {
         uint debit;
         // Number of times Penalized for cheating (or bad matrix)
         uint infractions;
-
         // Stack of spectrum data
         SpectrumData[] spectrum_data;
     }
@@ -19,7 +18,7 @@ contract SensingService {
 
     struct Round {
       address[] helpersReceived;
-      uint max_helpers_needed;
+      //uint max_helpers_needed;
       uint round_id;
     }
 
@@ -30,15 +29,11 @@ contract SensingService {
     address public owner;
     uint number_helpers;
 
-
-    // Sensing Data received by this Helper
-    // x = time_index, y = data
-    //SensingSlot[] sensing_slot_stack;
-
     event Payout(address indexed _provider,
                       uint indexed _timestamp
                         // uint _payment);
                   );
+    event RoundCreated(uint indexed round_id);
 
     // mapping = "Hash", with the Eth Account Address as the 'key' into this 'array'
     // http://solidity.readthedocs.io/en/develop/types.html#mappings
@@ -89,9 +84,10 @@ contract SensingService {
 
 
       // insert this data in the first available round
-      //uint round_index = 0;
+      uint round_index = 0;
       for (uint i=0; i < rounds.length; i++) {
         Round round = rounds[i];
+        round_index = i;
 
         bool round_free = true;
         // Iterate thru this slot's Helpers to see if it's occupied by this address
@@ -103,21 +99,29 @@ contract SensingService {
             break;
           }
         }
-
         if (round_free) {
-
-          SpectrumData memory spectrum_data = SpectrumData({
-              data:data,
-              timestamp_received:block.timestamp,
-              round_id : i
-          });
-          helperProviders[_helper].spectrum_data.push(spectrum_data);
-          // set this Helper as 'used' in the current Round
-          rounds[i].helpersReceived.push(_helper);
-
           break;
         }
       }
+      // spectrum data to insert
+      SpectrumData memory spectrum_data = SpectrumData({
+          data:data,
+          timestamp_received:block.timestamp,
+          round_id : round_index
+      });
+      helperProviders[_helper].spectrum_data.push(spectrum_data);
+
+      // no round exists? create a new one
+      if (rounds[round_index].round_id < 0) {
+        address[] memory list = new address[](1);
+        Round memory new_round = Round({
+          helpersReceived : list,
+          round_id : round_index
+        });
+        rounds.push(new_round);
+        RoundCreated(round_index);
+      }
+      rounds[round_index].helpersReceived.push(_helper);
 
       // now check if we are done with certian rounds
       check_rounds_and_pay_helpers();
@@ -145,7 +149,6 @@ contract SensingService {
         HelperProvider helper = helperProviders[addr];
 
         // TODO VALIDATE MATRICES
-
       }
     }
 

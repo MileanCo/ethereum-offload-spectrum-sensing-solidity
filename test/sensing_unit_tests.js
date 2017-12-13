@@ -42,17 +42,34 @@ contract('SensingService', function(accounts) {
   });
 
   it(" recieveSensingData from account 1", function() {
+    var sensing_service;
     return SensingService.deployed().then(function(instance) {
+      sensing_service = instance;
       console.log("sending account1 data to contract");
-      instance.setSensingData(accounts[1], get_sensing_data());
-
-      console.log("sending account2 data to contract");
-      instance.setSensingData(accounts[2], get_sensing_data());
-
-
+      var promise = sensing_service.setSensingData(accounts[1], get_sensing_data());
+      return promise;
 
     }).then(function(tx_id) {
       console.log(tx_id);
+      console.log("sending account2 data to contract");
+      return sensing_service.setSensingData(accounts[2], get_sensing_data());
+
+    }).then(function(event_tx_id) {
+      console.log(event_tx_id);
+      console.log("checking if payout events occurred");
+
+      for (var i = 0; i < event_tx_id.logs.length; i++) {
+        var log = event_tx_id.logs[i];
+        console.log(log.event);
+        if (log.event == "Payout") {
+          found = true;
+          console.log("WIN");
+          //assert.equal(log.args._tputInKbps.toNumber(), amount);
+          break;
+        }
+      }
+
+      //return instance.setSensingData(accounts[2], get_sensing_data());
 
     }).catch(function(error){
       console.log(error);
