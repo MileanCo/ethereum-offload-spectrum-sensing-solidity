@@ -6,20 +6,18 @@ contract SensingService {
         uint debit;
         // Number of times Penalized for cheating (or bad matrix)
         uint infractions;
-        // Stack of spectrum data
-        SpectrumData[] spectrum_data;
+    }
+
+    struct SensingRound {
+      address[] helpersReceived;
+      //uint max_helpers_needed;
+      mapping(address => SpectrumData) spectrum_data;
+      uint round_id;
     }
 
     struct SpectrumData {
       uint[] data;
-      uint round_id;
       uint timestamp_received;
-    }
-
-    struct Round {
-      address[] helpersReceived;
-      //uint max_helpers_needed;
-      uint round_id;
     }
 
     uint public minSensingDuration = 2; //seconds for Helper to send response of sensing results
@@ -30,21 +28,26 @@ contract SensingService {
     uint number_helpers;
 
     event Payout(address indexed _provider,
-                      uint indexed _timestamp
+                    uint indexed _timestamp
                         // uint _payment);
                   );
-    event RoundCreated(uint indexed round_id);
+
+    // for testing purposes, notify when a new SensingRound is started/created
+    event NewRoundCreated(uint indexed round_id);
+
+    event NotifyHelpersToValidate(uint indexed round_id);
 
     // mapping = "Hash", with the Eth Account Address as the 'key' into this 'array'
     // http://solidity.readthedocs.io/en/develop/types.html#mappings
     mapping (address => HelperProvider) helperProviders;
     mapping (uint => address) providerIndex;
 
-    Round[] rounds;
+    SensingRound[] rounds;
+
 
 
     // SU creates a new contract
-    function SensingService(address[] helpers, uint _sensing_band, uint _bandwidth_granularity) {
+    function SensingService(address[] helpers, uint _sensing_band, uint _bandwidth_granularity) public {
         owner = msg.sender;
         sensing_band = _sensing_band;
         bandwidth_granularity = _bandwidth_granularity;
@@ -60,11 +63,12 @@ contract SensingService {
         if(msg.sender != owner) {
             throw;
         }
+        // wtf is this... required though
         _;
     }
 
     // Add a new Helper to this contract
-    function _registerHelper(address _provider, uint _id) returns(bool) {
+    function _registerHelper(address _provider, uint _id) private returns(bool) {
       // TODO: check the input parameters
       helperProviders[_provider].id = _id;
       helperProviders[_provider].debit = 0;
@@ -77,92 +81,92 @@ contract SensingService {
       return true;
     }
 
-    // Helper 'sends' sensingData to Contract
-    // duration_index = time interval that sensing data was gathered.
-    function setSensingData(address _helper, uint[] data) public returns(bool) {
-      // set sensingData of this helper at given timestamp
-
-
+    function notifySensingDataSent(address _helper) public returns(bool) {
+      // GET ROUND_INDEX DESIRED
       // insert this data in the first available round
       uint round_index = 0;
       for (uint i=0; i < rounds.length; i++) {
-        Round round = rounds[i];
+        SensingRound storage round = rounds[i];
         round_index = i;
 
         bool round_free = true;
-        // Iterate thru this slot's Helpers to see if it's occupied by this address
+        // Iterate thru this SensingRound's Helpers to see if it's occupied by this address
         for (uint j=0; j < round.helpersReceived.length; j++) {
-          address helper = round.helpersReceived[j];
-          if (helper == _helper) {
+          address other_helper = round.helpersReceived[j];
+          if (other_helper == _helper) {
             round_free = false;
             // We found it
             break;
           }
         }
+        // found round to insert in, exit loop
         if (round_free) {
           break;
         }
       }
-      // spectrum data to insert
-      SpectrumData memory spectrum_data = SpectrumData({
-          data:data,
-          timestamp_received:block.timestamp,
-          round_id : round_index
-      });
-      helperProviders[_helper].spectrum_data.push(spectrum_data);
 
       // no round exists? create a new one
-      if (rounds[round_index].round_id < 0) {
-        address[] memory list = new address[](1);
-        Round memory new_round = Round({
-          helpersReceived : list,
+      // can't check for NULL or 0, so we have to compare the index to size of array
+      if (round_index >= rounds.length) {
+        address[] memory helpers_received = new address[](1);
+        // create new SensingRound
+        SensingRound memory new_round = SensingRound({
+          helpersReceived : helpers_received,
           round_id : round_index
         });
         rounds.push(new_round);
-        RoundCreated(round_index);
+        // create new event to notify
+        NewRoundCreated(round_index);
       }
-      rounds[round_index].helpersReceived.push(_helper);
 
-      // now check if we are done with certian rounds
-      check_rounds_and_pay_helpers();
+      // Add this Helper to the SensingRound selected
+      rounds[round_index].helpersReceived.push(_helper);
 
       return true;
     }
 
-    function check_rounds_and_pay_helpers() {
-      for (uint i=0; i < rounds.length; i++) {
-        Round round = rounds[i];
 
-        if (round.helpersReceived.length >= number_helpers) {
-          validate_round(i);
-          pay_round(i);
-          //delete_round(i);
-        }
-      }
+    function setSensingDataForRound(address _helper, uint round_index) public returns(bool){
+
+      return true;
     }
+
 
     function validate_round(uint round_index) {
-      Round round = rounds[round_index];
-      //address last_helper_addr;
-      for (uint j=0; j < round.helpersReceived.length; j++) {
-        address addr = round.helpersReceived[j];
+      SensingRound storage round = rounds[round_index];
+
+      NotifyHelpersToValidate(round_index);
+/**
+      for (uint i=0; i < round.helpersReceived.length; i++) {
+        address helper_addr = round.helpersReceived[i];
         HelperProvider helper = helperProviders[addr];
 
-        // TODO VALIDATE MATRICES
+        // send Event to notify Helpers to send the spectrum data by given index
+
+
+      }*/
+    }
+
+    function deliverPayments() public ownerOnly {
+      for (uint i=0; i < rounds.length; i++) {
+        _pay_round(i);
+        // dont need this round anymore
+        _delete_round(i);
       }
     }
 
-    function pay_round (uint round_index) {
-      Round round = rounds[round_index];
-      for (uint j=0; j < round.helpersReceived.length; j++) {
-        address helper_addr = round.helpersReceived[j];
+    function _pay_round (uint round_index) private {
+      //
+      SensingRound storage round = rounds[round_index];
+      // Pay all helpers for this round
+      for (uint i=0; i < round.helpersReceived.length; i++) {
+        address helper_addr = round.helpersReceived[i];
         Payout(helper_addr, block.timestamp);
-
       }
     }
 
-    function delete_round(uint round_index) {
-      Round round = rounds[round_index];
+    function _delete_round(uint round_index) private {
+      SensingRound storage round = rounds[round_index];
       delete rounds[round_index];
 
     }

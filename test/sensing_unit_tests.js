@@ -41,23 +41,28 @@ contract('SensingService', function(accounts) {
     });
   });
 
-  it(" recieveSensingData from account 1", function() {
+  // .call = explicitly let the Ethereum network know we're not intending to persist any changes.
+
+  it(" recieveSensingData from all helpers", function() {
     var sensing_service;
     return SensingService.deployed().then(function(instance) {
       sensing_service = instance;
-      console.log("sending account1 data to contract");
-      var promise = sensing_service.setSensingData(accounts[1], get_sensing_data());
-      return promise;
+      console.log("sending account1 "+accounts[1]+" data to contract");
+
+      // execute as a Transaction (need 2 make changes)
+      return sensing_service.notifySensingDataSent(accounts[1], {from: accounts[1]});
+      //return promise;
 
     }).then(function(tx_id) {
       console.log(tx_id);
-      console.log("sending account2 data to contract");
-      return sensing_service.setSensingData(accounts[2], get_sensing_data());
+      console.log("sending account2 "+accounts[2]+" data to contract");
+      // execute as a Transaction (need 2 make changes)
+      return sensing_service.notifySensingDataSent(accounts[2], {from: accounts[2]});
 
     }).then(function(event_tx_id) {
       console.log(event_tx_id);
       console.log("checking if payout events occurred");
-
+/**
       for (var i = 0; i < event_tx_id.logs.length; i++) {
         var log = event_tx_id.logs[i];
         console.log(log.event);
@@ -67,9 +72,13 @@ contract('SensingService', function(accounts) {
           //assert.equal(log.args._tputInKbps.toNumber(), amount);
           break;
         }
-      }
+      }*/
 
       //return instance.setSensingData(accounts[2], get_sensing_data());
+      //return sensing_service.owner.call({from: accounts[0]});
+      /**
+    }).then(function(address) {
+      assert.equal(address, accounts[0], "accounts[1] wasn't the new owner of the contract");*/
 
     }).catch(function(error){
       console.log(error);
