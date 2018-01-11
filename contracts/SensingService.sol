@@ -32,9 +32,11 @@ contract SensingService {
                         // uint _payment);
                   );
 
-    // for testing purposes, notify when a new SensingRound is started/created
+    // EVENTS for testing purposes, notify when a new SensingRound is started/created
     event NewRoundCreated(uint indexed round_id);
+    event RoundDeleted(uint indexed round_id);
 
+    // Useful events
     event NotifyHelpersToValidate(uint indexed round_id);
 
     // mapping = "Hash", with the Eth Account Address as the 'key' into this 'array'
@@ -122,6 +124,10 @@ contract SensingService {
       // Add this Helper to the SensingRound selected
       rounds[round_index].helpersReceived.push(_helper);
 
+      if (rounds[round_index].helpersReceived.length >= number_helpers) {
+        _pay_round(round_index);
+      }
+
       return true;
     }
 
@@ -149,25 +155,29 @@ contract SensingService {
 
     function deliverPayments() public ownerOnly {
       for (uint i=0; i < rounds.length; i++) {
-        _pay_round(i);
-        // dont need this round anymore
-        _delete_round(i);
+        var success = _pay_round(i);
       }
     }
 
-    function _pay_round (uint round_index) private {
-      //
+    function _pay_round (uint round_index) private returns (bool) {
       SensingRound storage round = rounds[round_index];
+      // dont pay this round if all helpers havent sent their shit yet
+      if (round.helpersReceived.length < number_helpers) {
+        return false;
+      }
       // Pay all helpers for this round
       for (uint i=0; i < round.helpersReceived.length; i++) {
         address helper_addr = round.helpersReceived[i];
         Payout(helper_addr, block.timestamp);
       }
+      // delete round when not needed
+      _delete_round(round_index);
+      return true;
     }
 
     function _delete_round(uint round_index) private {
       SensingRound storage round = rounds[round_index];
       delete rounds[round_index];
-
+      RoundDeleted(round_index);
     }
 }

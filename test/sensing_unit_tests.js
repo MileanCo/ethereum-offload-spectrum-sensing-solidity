@@ -43,7 +43,7 @@ contract('SensingService', function(accounts) {
 
   // .call = explicitly let the Ethereum network know we're not intending to persist any changes.
 
-  it(" recieveSensingData from all helpers", function() {
+  it(" recieveSensingData from all helpers and then pay", function() {
     var sensing_service;
     return SensingService.deployed().then(function(instance) {
       sensing_service = instance;
@@ -60,19 +60,18 @@ contract('SensingService', function(accounts) {
       return sensing_service.notifySensingDataSent(accounts[2], {from: accounts[2]});
 
     }).then(function(event_tx_id) {
-      console.log(event_tx_id);
       console.log("checking if payout events occurred");
-/**
+      console.log(event_tx_id);
+
       for (var i = 0; i < event_tx_id.logs.length; i++) {
         var log = event_tx_id.logs[i];
         console.log(log.event);
         if (log.event == "Payout") {
-          found = true;
           console.log("WIN");
           //assert.equal(log.args._tputInKbps.toNumber(), amount);
           break;
         }
-      }*/
+      }
 
       //return instance.setSensingData(accounts[2], get_sensing_data());
       //return sensing_service.owner.call({from: accounts[0]});
