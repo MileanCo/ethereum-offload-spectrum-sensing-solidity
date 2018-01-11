@@ -69,47 +69,28 @@ contract('ServiceFactory', function(accounts) {
         return sensingService.helperNotifyDataSent(accounts[1], {from: accounts[1]});
         //return promise;
 
-      }).then(function(event_tx_obj) {
-        console.log(event_tx_obj);
-        //console.log(event_tx_obj.logs[0]);
-        // check that we got NewRoundCreated, nothing else
-        //if (event_tx_obj.logs.length > 1) {
-        //  assert.fail("Should only have 1 event, NewRoundCreated");
-        //}
-        for (var i = 0; i < event_tx_obj.logs.length; i++) {
-          var log = event_tx_obj.logs[i];
+      }).then(function(tx_obj) {
+        console.log(tx_obj);
+        for (var i = 0; i < tx_obj.logs.length; i++) {
+          var log = tx_obj.logs[i];
           console.log(log.event);
-          if (log.event == "RoundCompleted") {
-            assert.equal(log.event, "Bad", "Invalid RoundCompleted event occured");
-          } else if (log.event == "DebugInt") {
-            console.log(log);
-          }
         }
+        assert.equal(tx_obj.logs[0].event, "NewRoundCreated", "Invalid event occured");
 
         console.log("sending account2 "+accounts[2]+" data to contract");
         // execute as a Transaction (need 2 make changes)
         return sensingService.helperNotifyDataSent(accounts[2], {from: accounts[2]});
 
-      }).then(function(event_tx_obj) {
+      }).then(function(tx_obj) {
         console.log("checking if payout events occurred");
-        console.log(event_tx_obj);
+        console.log(tx_obj);
 
-        // check that we got NotifyUsersToValidate event and RoundCompleted event
-        for (var i = 0; i < event_tx_obj.logs.length; i++) {
-          var log = event_tx_obj.logs[i];
+        for (var i = 0; i < tx_obj.logs.length; i++) {
+          var log = tx_obj.logs[i];
           console.log(log.event);
-          if (log.event == "Payout") {
-            console.log("WIN");
-            //assert.equal(log.args._tputInKbps.toNumber(), amount);
-            break;
-          }
         }
-
-        //return instance.setSensingData(accounts[2], get_sensing_data());
-        //return sensingService.owner.call({from: accounts[0]});
-        /**
-      }).then(function(address) {
-        assert.equal(address, accounts[0], "accounts[1] wasn't the new owner of the contract");*/
+        assert.equal(tx_obj.logs[0].event, "RoundCompleted", "Invalid event occured");
+        assert.equal(tx_obj.logs[1].event, "NotifyUsersToValidate", "Invalid event occured");
 
       }).catch(function(error){
         console.log(error);
