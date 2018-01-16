@@ -1,14 +1,24 @@
+var Web3 = require('web3')
+if (typeof web3 != 'undefined') {
+  web3 = new Web3(web3.currentProvider);
+} else {
+  web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+}
+
 var ServiceFactory = artifacts.require("./ServiceFactory.sol");
 var SensingService = artifacts.require("./SensingService.sol");
 
 
 contract('ServiceFactory', function(accounts) {
-    const _costPerKbps = 1000000000000000; // 1 finney = 0.001 ether
+    //const _costPerRound = 1000000000000000; // 1 finney = 0.001 ether
+    const _relativeCostPerRound = 1;
+    const _costPerRound = web3.toWei(_relativeCostPerRound, "ether");
     console.log("we have these accounts available: ");
     console.log(accounts);
 
     var sensing_band = 10;
     var bandwidth_granularity = 100;
+    var owner_su = accounts[0];
     var helpers_list = [
       accounts[1],
       accounts[2],
@@ -27,7 +37,7 @@ contract('ServiceFactory', function(accounts) {
     ServiceFactory.deployed().then(function(instance) {
       serviceFactory = instance;
       // returns transaction
-      return serviceFactory.newSensingService(helpers_list, sensing_band, bandwidth_granularity, {from:accounts[0]} );
+      return serviceFactory.newSensingService(helpers_list, sensing_band, bandwidth_granularity, _costPerRound, {from:owner_su} );
     }).then(function(tx_obj) {
       // now we have created a new SensingService contract instance... retrieve it and then run some tests.
       var sensingService;
@@ -35,9 +45,9 @@ contract('ServiceFactory', function(accounts) {
       var new_contract_address = tx_obj.logs[0].args.serviceAddr;
       SensingService.at(new_contract_address).then(function(instance) {
         sensingService = instance;
-        return sensingService.owner_su.call({from: accounts[0]});
+        return sensingService.owner_su.call({from: owner_su});
       }).then(function(address) {
-          assert.equal(address, accounts[0], "accounts[0] wasn't the owner of the contract");
+          assert.equal(address, owner_su, "owner_su wasn't the owner of the contract");
       }).catch(
         function(error) {
           console.log(error);
@@ -59,18 +69,28 @@ contract('ServiceFactory', function(accounts) {
 
     ServiceFactory.deployed().then(function(instance) {
       serviceFactory = instance;
-      return serviceFactory.newSensingService(helpers_list, sensing_band, bandwidth_granularity, {from:accounts[0]} );
+      return serviceFactory.newSensingService(helpers_list, sensing_band, bandwidth_granularity, _costPerRound, {from:owner_su} );
+
     }).then(function(tx_obj) {
+
+
       // now we have created a new SensingService contract instance... retrieve it and then run some tests.
       var sensingService;
       console.log(tx_obj.logs[0].args);
       var new_contract_address = tx_obj.logs[0].args.serviceAddr;
       SensingService.at(new_contract_address).then(function(instance) {
         sensingService = instance;
+
+        //if (web3.eth.fromWei(web3.eth.getBalance(SLA.address)) < 5) {
+        console.log("increasing funds for sensingContract from owner's account");
+        return sensingService.increaseFunds({from: owner_su, value: web3.toWei(_relativeCostPerRound*3, "ether") });
+
+      }).then(function(tx_obj) {
+        console.log(tx_obj);
+        // execute as a Transaction (need to make changes to data on blockchain)
         console.log("sending account1 "+accounts[1]+" data to contract");
-        // execute as a Transaction (need 2 make changes)
-        return sensingService.helperNotifyDataSent(accounts[1], {from: accounts[0]});
-        //return promise;
+        return sensingService.helperNotifyDataSent(accounts[1], {from: owner_su});
+
 
       }).then(function(tx_obj) {
         console.log(tx_obj);
@@ -85,7 +105,7 @@ contract('ServiceFactory', function(accounts) {
 
         console.log("sending account2 "+accounts[2]+" data to contract");
         // execute as a Transaction (need 2 make changes)
-        return sensingService.helperNotifyDataSent(accounts[2], {from: accounts[0]});
+        return sensingService.helperNotifyDataSent(accounts[2], {from: owner_su});
 
       }).then(function(tx_obj) {
         console.log("checking if RoundCompleted and NotifyUsersToValidate events occurred");
@@ -98,7 +118,7 @@ contract('ServiceFactory', function(accounts) {
         assert.equal(tx_obj.logs[1].event, "NotifyUsersToValidate", "Invalid event occured");
         // now send the users data for validation
         console.log("set first account sensing data");
-        return sensingService.setSensingDataForRound(accounts[1], get_sensing_data(), roundId, {from: accounts[0]});
+        return sensingService.setSensingDataForRound(accounts[1], get_sensing_data(), roundId, {from: owner_su});
 
       }).then(function(tx_obj) {
         console.log("No events should have occured");
@@ -110,7 +130,7 @@ contract('ServiceFactory', function(accounts) {
         //assert.equal(tx_obj.logs[0].event, "RoundCompleted", "Invalid event occured");
         // now send the users data for validation
         console.log("set second account sensing data");
-        return sensingService.setSensingDataForRound(accounts[2], get_sensing_data(), roundId, {from: accounts[0]});
+        return sensingService.setSensingDataForRound(accounts[2], get_sensing_data(), roundId, {from: owner_su});
 
       }).then(function(tx_obj) {
         console.log("checking ValidatedRound event occured" );
@@ -121,7 +141,7 @@ contract('ServiceFactory', function(accounts) {
         }
         assert.equal(tx_obj.logs[0].event, "ValidatedRound", "Invalid event occured");
         // TEST DONE
-        console.log("DONE - SUCCESS");
+        console.log("Account1 is withdrawing their credits (getting ether)");
         return  sensingService.withdraw({from:accounts[1]});
 
       }).then(function(tx_obj) {
@@ -129,13 +149,23 @@ contract('ServiceFactory', function(accounts) {
         console.log(tx_obj);
         for (var i = 0; i < tx_obj.logs.length; i++) {
           var log = tx_obj.logs[i];
-          console.log(log.event);
+          //console.log(log.event);
         }
-        //assert.equal(tx_obj.logs[0].event, "ValidatedRound", "Invalid event occured");
+        assert.equal(tx_obj.logs[0].event, "Payout", "Invalid event occured");
         // TEST DONE
         console.log("DONE - SUCCESS");
-        //return  sensingService.withdraw({from:accounts[1]});
+        return  sensingService.withdraw({from:accounts[2]});
 
+      }).then(function(tx_obj) {
+        console.log("checking withdraw event occured" );
+        console.log(tx_obj);
+        for (var i = 0; i < tx_obj.logs.length; i++) {
+          var log = tx_obj.logs[i];
+        //  console.log(log.event);
+        }
+        assert.equal(tx_obj.logs[0].event, "Payout", "Invalid event occured");
+        // TEST DONE
+        console.log("DONE - SUCCESS");
 
       }).catch(function(error){
         console.log(error);

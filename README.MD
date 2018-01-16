@@ -4,14 +4,14 @@ Forked from https://arxiv.org/abs/1703.04502
 
 # Setup
 1. Install [TruffleJS](https://github.com/trufflesuite/truffle)
-2. Install [TestRPC](https://github.com/ethereumjs/testrpc)
+2. Install [Ganache](http://truffleframework.com/ganache/) - run a local Ethereum blockchain to run tests, execute commands, and inspect state
 
 # How to Run
-1. In a Terminal window, run 'testrpc'
+1. start Ganache
 2. In a new Terminal window, run:
 3. cd "project download directory where truffle.js lives"
 4. truffle compile
-5. truffle migrate (this will 'connect' to your local instance of Ethereum (testrpc), utilizing the dev settings in truffle.js)
+5. truffle migrate (this will 'connect' to your local instance of Ethereum (Ganache), utilizing the dev settings in truffle.js)
 6. truffle test
 
 # How to run simulations / scenarios

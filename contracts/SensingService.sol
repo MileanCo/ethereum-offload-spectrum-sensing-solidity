@@ -28,6 +28,8 @@ contract SensingService {
     uint public minSensingDuration = 2; //seconds for Helper to send response of sensing results
     uint public sensing_band;
     uint public bandwidth_granularity;
+    //uint public _costPerRound = 1000000000000000; // 1 finney = 0.001 ether
+    uint public costPerRound;
     // address of SU
     address public owner_su;
     uint number_helpers = 0;
@@ -43,13 +45,14 @@ contract SensingService {
     event NotifyUsersToValidate(uint indexed roundId);
     event ValidatedRound(uint indexed roundId, bool valid);
     event Payout(address indexed _provider,
-                    uint indexed _timestamp
+                    uint indexed _timestamp,
+                    uint amount
     );
     event RoundCompleted(//address indexed _provider,
                     uint indexed _timestamp
                         // uint _payment);
     );
-    event InsufficientFunds(uint indexed _timestamp);
+    event InsufficientFunds(uint indexed _timestamp, uint amount_owed);
 
     // mapping = "Hash", with the Eth Account Address as the 'key' into this 'array'
     // http://solidity.readthedocs.io/en/develop/types.html#mappings
@@ -59,10 +62,12 @@ contract SensingService {
 
 
     // Constructor / init() method...  SU creates a new contract
-    function SensingService(address[] helpers, address _owner_su, uint _sensing_band, uint _bandwidth_granularity) public {
+    function SensingService(address[] helpers, address _owner_su, uint _sensing_band, uint _bandwidth_granularity, uint _costPerRound) public {
         owner_su = _owner_su;
         sensing_band = _sensing_band;
         bandwidth_granularity = _bandwidth_granularity;
+        costPerRound = _costPerRound;
+
         //current_rounds_queue = new SensingRound[](0);
         //delete current_rounds_queue[0];
         number_helpers = helpers.length;
@@ -91,7 +96,6 @@ contract SensingService {
 
       uint provider_ID = number_helpers;
       providerIndex[provider_ID] = _provider;
-      InsufficientFunds(0);
 
       return true;
     }
@@ -207,12 +211,12 @@ contract SensingService {
 
       }*/
     }
-
+/**
     function deliverPayments() public ownerOnly {
       for (uint i=0; i < current_rounds_queue.length; i++) {
         var success = _round_completed(i);
       }
-    }
+    }*/
 
     /* Each helper calls withdraw() to get their share of what is owed
     msg.sender = helper
@@ -222,16 +226,22 @@ contract SensingService {
       if (hp.amount_owed <= 0) {
         return false;
       }
-
+      uint amount_owed = hp.amount_owed * costPerRound;
       // send Ether to the sender of this message
-      if (msg.sender.send(hp.amount_owed)) {
+      if (msg.sender.send(amount_owed)) {
           hp.amount_owed = 0;
+          Payout(msg.sender, block.timestamp, amount_owed);
           return true;
       } else {
-          InsufficientFunds(block.timestamp);
+          InsufficientFunds(block.timestamp, amount_owed);
           return false;
       }
     }
+
+    /* Top up the balance of the contract so that providers can withdraw funds
+     * to receive payment for the traffic they served.
+     */
+    function increaseFunds() payable {}
 
     function _round_completed (uint round_index) private returns (bool) {
       SensingRound storage round = current_rounds_queue[round_index];
