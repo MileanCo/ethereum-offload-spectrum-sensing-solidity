@@ -11,7 +11,7 @@ contract SensingService {
     }
 
     struct SensingRound {
-        address[] helpersSentData;
+        address[] helpersSent;
         //address[] SUReceivedData; // TODD
         //uint max_helpers_needed;
         mapping(address => SpectrumData) spectrum_data;
@@ -19,6 +19,7 @@ contract SensingService {
     }
 
     struct SpectrumData {
+        // uint[][] data; UnimplementedFeatureError: Nested arrays not yet implemented.
         uint[] data;
       //  uint timestamp_received;
     }
@@ -42,6 +43,7 @@ contract SensingService {
 
     // Useful events
     event NotifyUsersToValidate(uint indexed roundId);
+    event ValidatedRound(uint indexed roundId, bool valid);
     event Payout(address indexed _provider,
                     uint indexed _timestamp
                         // uint _payment);
@@ -115,8 +117,8 @@ contract SensingService {
 
         bool round_free = true;
         // Iterate thru this SensingRound's Helpers to see if it's occupied by this address
-        for (uint j=0; j < round.helpersSentData.length; j++) {
-          address other_helper = round.helpersSentData[j];
+        for (uint j=0; j < round.helpersSent.length; j++) {
+          address other_helper = round.helpersSent[j];
           if (other_helper == _helper) {
             round_free = false;
             // We found it
@@ -133,11 +135,11 @@ contract SensingService {
       // can't check for NULL or 0, so we have to compare the index to size of array
       if (round_index >= current_rounds_queue.length) {
         // create new empty array
-        address[] memory _helpersSentData = new address[](0);
+        address[] memory _helpersSent = new address[](0);
       //  address[] memory _SUReceivedData //= new address[](0);
         // create new SensingRound
         SensingRound memory new_round = SensingRound({
-          helpersSentData : _helpersSentData,
+          helpersSent : _helpersSent,
           //SUReceivedData : _SUReceivedData,
           roundId : round_index
         });
@@ -147,12 +149,12 @@ contract SensingService {
       }
 
       // Add this Helper to the SensingRound selected
-      current_rounds_queue[round_index].helpersSentData.push(_helper);
+      current_rounds_queue[round_index].helpersSent.push(_helper);
 
       // Should we mark this round as completed?
       //DebugInt(number_helpers);
-      //DebugInt(current_rounds_queue[round_index].helpersSentData.length);
-      if (current_rounds_queue[round_index].helpersSentData.length >= number_helpers) {
+      //DebugInt(current_rounds_queue[round_index].helpersSent.length);
+      if (current_rounds_queue[round_index].helpersSent.length >= number_helpers) {
         _round_completed(round_index);
       }
 
@@ -161,19 +163,44 @@ contract SensingService {
     }
 
 
-    function setSensingDataForRound(address _helper, uint round_index) public returns(bool){
+    function setSensingDataForRound(address _helper, uint[] _data, uint round_index) public returns(bool) {
+      SensingRound storage round = current_rounds_queue[round_index];
+
+      if (round.spectrum_data[_helper].data.length > 0) {
+        // ALREADY got this round
+        return false;
+      }
+      // check that this Helper actually participated in this round
+      round.spectrum_data[_helper] = SpectrumData({
+        data: _data
+      });
+
+      // TODO: determine if we should validate_round
+      uint num_helpers_sent_spectrum_data = 0;
+      for (uint j=0; j < round.helpersSent.length; j++) {
+        address other_helper = round.helpersSent[j];
+        // has this other_helper set their SpectrumData yet?
+        if (round.spectrum_data[other_helper].data.length > 0) {
+          num_helpers_sent_spectrum_data++;
+        }
+      }
+
+      // if received all helpers in this round
+      if (num_helpers_sent_spectrum_data >= round.helpersSent.length) {
+        _validate_round(round_index);
+      }
 
       return true;
     }
 
 
-    function validate_round(uint round_index) {
+    function _validate_round(uint round_index) private {
       SensingRound storage round = current_rounds_queue[round_index];
-
-      NotifyUsersToValidate(round_index);
+      bool valid = true;
+      ValidatedRound(round_index, valid);
 /**
-      for (uint i=0; i < round.helpersSentData.length; i++) {
-        address helper_addr = round.helpersSentData[i];
+      for (uint i=0; i < round.helpersSent.length; i++) {
+        address helper_addr = round.helpersSent[i];
         HelperProvider helper = helperProviders[addr];
 
         // send Event to notify Helpers to send the spectrum data by given index
@@ -210,12 +237,12 @@ contract SensingService {
     function _round_completed (uint round_index) private returns (bool) {
       SensingRound storage round = current_rounds_queue[round_index];
       // dont complete thisx round if all helpers havent sent their shit yet
-      if (round.helpersSentData.length < number_helpers) {
+      if (round.helpersSent.length < number_helpers) {
         return false;
       }
       // Increase amount_owed (payment owed) to all helpers
-      for (uint i=0; i < round.helpersSentData.length; i++) {
-        address helper_addr = round.helpersSentData[i];
+      for (uint i=0; i < round.helpersSent.length; i++) {
+        address helper_addr = round.helpersSent[i];
         helperProviders[helper_addr].amount_owed += 1;
       }
       RoundCompleted(block.timestamp);
@@ -223,7 +250,7 @@ contract SensingService {
 
       if (true) {
         // when round is completed, verify it?
-        validate_round(round_index);
+        NotifyUsersToValidate(round_index);
       } else {
         // delete round when completed
         _delete_round(round_index);

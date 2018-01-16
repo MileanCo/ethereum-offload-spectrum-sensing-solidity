@@ -51,8 +51,9 @@ contract('ServiceFactory', function(accounts) {
 
   // .call = explicitly let the Ethereum network know we're not intending to persist any changes.
 
-  it(" recieveSensingData from all helpers and then pay", function() {
+  it(" recieveSensingData from all helpers, complete round, and validate it", function() {
     var serviceFactory;
+    var roundId;
 
     ServiceFactory.deployed().then(function(instance) {
       serviceFactory = instance;
@@ -76,21 +77,49 @@ contract('ServiceFactory', function(accounts) {
           console.log(log.event);
         }
         assert.equal(tx_obj.logs[0].event, "NewRoundCreated", "Invalid event occured");
+        console.log("Round id:");
+        console.log(tx_obj.logs[0].args);
+        roundId = tx_obj.logs[0].args.roundId;
 
         console.log("sending account2 "+accounts[2]+" data to contract");
         // execute as a Transaction (need 2 make changes)
         return sensingService.helperNotifyDataSent(accounts[2], {from: accounts[2]});
 
       }).then(function(tx_obj) {
-        console.log("checking if payout events occurred");
+        console.log("checking if RoundCompleted and NotifyUsersToValidate events occurred");
         console.log(tx_obj);
-
         for (var i = 0; i < tx_obj.logs.length; i++) {
           var log = tx_obj.logs[i];
           console.log(log.event);
         }
         assert.equal(tx_obj.logs[0].event, "RoundCompleted", "Invalid event occured");
         assert.equal(tx_obj.logs[1].event, "NotifyUsersToValidate", "Invalid event occured");
+        // now send the users data for validation
+        console.log("set first account sensing data");
+        return sensingService.setSensingDataForRound(accounts[1], get_sensing_data(), roundId, {from: accounts[1]});
+
+      }).then(function(tx_obj) {
+        console.log("No events should have occured");
+        console.log(tx_obj);
+        for (var i = 0; i < tx_obj.logs.length; i++) {
+          var log = tx_obj.logs[i];
+          console.log(log.event);
+        }
+        //assert.equal(tx_obj.logs[0].event, "RoundCompleted", "Invalid event occured");
+        // now send the users data for validation
+        console.log("set second account sensing data");
+        return sensingService.setSensingDataForRound(accounts[2], get_sensing_data(), roundId, {from: accounts[2]});
+
+      }).then(function(tx_obj) {
+        console.log("checking ValidatedRound event occured" );
+        console.log(tx_obj);
+        for (var i = 0; i < tx_obj.logs.length; i++) {
+          var log = tx_obj.logs[i];
+          console.log(log.event);
+        }
+        assert.equal(tx_obj.logs[0].event, "ValidatedRound", "Invalid event occured");
+        // TEST DONE
+        console.log("DONE - SUCCESS");
 
       }).catch(function(error){
         console.log(error);
