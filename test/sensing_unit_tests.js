@@ -16,6 +16,7 @@ contract('ServiceFactory', function(accounts) {
     ];
 
   function get_sensing_data() {
+    // TODO: add fancy data
     return [0,1,0,1,1,1,1,0,0,0,1,0,1];
   }
 
@@ -25,6 +26,7 @@ contract('ServiceFactory', function(accounts) {
     // first we retrieved the Factory contract (which creates instances of SensingService)
     ServiceFactory.deployed().then(function(instance) {
       serviceFactory = instance;
+      // returns transaction
       return serviceFactory.newSensingService(helpers_list, sensing_band, bandwidth_granularity, {from:accounts[0]} );
     }).then(function(tx_obj) {
       // now we have created a new SensingService contract instance... retrieve it and then run some tests.
@@ -67,7 +69,7 @@ contract('ServiceFactory', function(accounts) {
         sensingService = instance;
         console.log("sending account1 "+accounts[1]+" data to contract");
         // execute as a Transaction (need 2 make changes)
-        return sensingService.helperNotifyDataSent(accounts[1], {from: accounts[1]});
+        return sensingService.helperNotifyDataSent(accounts[1], {from: accounts[0]});
         //return promise;
 
       }).then(function(tx_obj) {
@@ -83,7 +85,7 @@ contract('ServiceFactory', function(accounts) {
 
         console.log("sending account2 "+accounts[2]+" data to contract");
         // execute as a Transaction (need 2 make changes)
-        return sensingService.helperNotifyDataSent(accounts[2], {from: accounts[2]});
+        return sensingService.helperNotifyDataSent(accounts[2], {from: accounts[0]});
 
       }).then(function(tx_obj) {
         console.log("checking if RoundCompleted and NotifyUsersToValidate events occurred");
@@ -96,7 +98,7 @@ contract('ServiceFactory', function(accounts) {
         assert.equal(tx_obj.logs[1].event, "NotifyUsersToValidate", "Invalid event occured");
         // now send the users data for validation
         console.log("set first account sensing data");
-        return sensingService.setSensingDataForRound(accounts[1], get_sensing_data(), roundId, {from: accounts[1]});
+        return sensingService.setSensingDataForRound(accounts[1], get_sensing_data(), roundId, {from: accounts[0]});
 
       }).then(function(tx_obj) {
         console.log("No events should have occured");
@@ -108,7 +110,7 @@ contract('ServiceFactory', function(accounts) {
         //assert.equal(tx_obj.logs[0].event, "RoundCompleted", "Invalid event occured");
         // now send the users data for validation
         console.log("set second account sensing data");
-        return sensingService.setSensingDataForRound(accounts[2], get_sensing_data(), roundId, {from: accounts[2]});
+        return sensingService.setSensingDataForRound(accounts[2], get_sensing_data(), roundId, {from: accounts[0]});
 
       }).then(function(tx_obj) {
         console.log("checking ValidatedRound event occured" );
@@ -120,6 +122,20 @@ contract('ServiceFactory', function(accounts) {
         assert.equal(tx_obj.logs[0].event, "ValidatedRound", "Invalid event occured");
         // TEST DONE
         console.log("DONE - SUCCESS");
+        return  sensingService.withdraw({from:accounts[1]});
+
+      }).then(function(tx_obj) {
+        console.log("checking withdraw event occured" );
+        console.log(tx_obj);
+        for (var i = 0; i < tx_obj.logs.length; i++) {
+          var log = tx_obj.logs[i];
+          console.log(log.event);
+        }
+        //assert.equal(tx_obj.logs[0].event, "ValidatedRound", "Invalid event occured");
+        // TEST DONE
+        console.log("DONE - SUCCESS");
+        //return  sensingService.withdraw({from:accounts[1]});
+
 
       }).catch(function(error){
         console.log(error);

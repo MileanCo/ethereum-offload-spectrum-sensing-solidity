@@ -4,6 +4,8 @@ import "contracts/SensingService.sol"; // defines "SimpleAuction"
 
 contract ServiceFactory {
 
+  // no Constructor
+
     event LogNewSensingService(address serviceAddr);
 
     function newSensingService(address[] helpers, uint _sensing_band, uint _bandwidth_granularity) returns(address createdContract) {

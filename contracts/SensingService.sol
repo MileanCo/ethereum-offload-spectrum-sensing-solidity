@@ -1,6 +1,5 @@
 pragma solidity ^0.4.18;
 
-
 contract SensingService {
     struct HelperProvider {
         uint id;
@@ -13,7 +12,6 @@ contract SensingService {
     struct SensingRound {
         address[] helpersSent;
         //address[] SUReceivedData; // TODD
-        //uint max_helpers_needed;
         mapping(address => SpectrumData) spectrum_data;
         uint roundId;
     }
@@ -46,7 +44,6 @@ contract SensingService {
     event ValidatedRound(uint indexed roundId, bool valid);
     event Payout(address indexed _provider,
                     uint indexed _timestamp
-                        // uint _payment);
     );
     event RoundCompleted(//address indexed _provider,
                     uint indexed _timestamp
@@ -136,7 +133,7 @@ contract SensingService {
       if (round_index >= current_rounds_queue.length) {
         // create new empty array
         address[] memory _helpersSent = new address[](0);
-      //  address[] memory _SUReceivedData //= new address[](0);
+
         // create new SensingRound
         SensingRound memory new_round = SensingRound({
           helpersSent : _helpersSent,
@@ -198,6 +195,8 @@ contract SensingService {
       SensingRound storage round = current_rounds_queue[round_index];
       bool valid = true;
       ValidatedRound(round_index, valid);
+
+      // TODO: if cheater caut, decrement amount_owed
 /**
       for (uint i=0; i < round.helpersSent.length; i++) {
         address helper_addr = round.helpersSent[i];
@@ -248,6 +247,7 @@ contract SensingService {
       RoundCompleted(block.timestamp);
 
 
+      // TODO: only validate random # of times
       if (true) {
         // when round is completed, verify it?
         NotifyUsersToValidate(round_index);
