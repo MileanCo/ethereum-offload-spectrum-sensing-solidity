@@ -188,28 +188,30 @@ contract SensingService {
 
       // if received all helpers in this round
       if (num_helpers_sent_spectrum_data >= round.helpersSent.length) {
-        _validate_round(round_index);
+        bool valid = _validate_round(round_index);
       }
 
       return true;
     }
 
 
-    function _validate_round(uint round_index) private {
-      SensingRound storage round = current_rounds_queue[round_index];
+    function _validate_round(uint round_index) private returns (bool) {
       bool valid = true;
-      ValidatedRound(round_index, valid);
+      uint index_to_check = 0;
+      uint last_helper_data = 10;
 
-      // TODO: if cheater caut, decrement amount_owed
-/**
+      SensingRound storage round = current_rounds_queue[round_index];
       for (uint i=0; i < round.helpersSent.length; i++) {
         address helper_addr = round.helpersSent[i];
-        HelperProvider helper = helperProviders[addr];
+        if (last_helper_data != round.spectrum_data[helper_addr].data[index_to_check] && last_helper_data != 10) {
+          valid = false;
+          helperProviders[helper_addr].amount_owed -= 1;
+        }
+        last_helper_data = round.spectrum_data[helper_addr].data[index_to_check];
+      }
 
-        // send Event to notify Helpers to send the spectrum data by given index
-
-
-      }*/
+      ValidatedRound(round_index, valid);
+      return valid;
     }
 /**
     function deliverPayments() public ownerOnly {

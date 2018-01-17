@@ -29,6 +29,10 @@ contract('ServiceFactory', function(accounts) {
     // TODO: add fancy data
     return [0,1,0,1,1,1,1,0,0,0,1,0,1];
   }
+  function get_sensing_data_2() {
+    // TODO: add fancy data
+    return [1,1,0,1,1,1,1,0,0,0,1,0,1];
+  }
 
   it("should save the address of the creator as the owner var ", function() {
     var serviceFactory;
@@ -130,7 +134,7 @@ contract('ServiceFactory', function(accounts) {
         //assert.equal(tx_obj.logs[0].event, "RoundCompleted", "Invalid event occured");
         // now send the users data for validation
         console.log("set second account sensing data");
-        return sensingService.setSensingDataForRound(accounts[2], get_sensing_data(), roundId, {from: owner_su});
+        return sensingService.setSensingDataForRound(accounts[2], get_sensing_data_2(), roundId, {from: owner_su});
 
       }).then(function(tx_obj) {
         console.log("checking ValidatedRound event occured" );
@@ -140,6 +144,7 @@ contract('ServiceFactory', function(accounts) {
           console.log(log.event);
         }
         assert.equal(tx_obj.logs[0].event, "ValidatedRound", "Invalid event occured");
+        console.log(tx_obj.logs[0].args);
         // TEST DONE
         console.log("Account1 is withdrawing their credits (getting ether)");
         return  sensingService.withdraw({from:accounts[1]});
