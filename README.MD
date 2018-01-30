@@ -61,7 +61,7 @@ This will trigger the payment of the original user to the one who did the work.
 
 Contracts are stored on the blockchain (database) as "Executable code", and other people can interact with it, depending on their role. This is what happens when you call 'truffle migrate', it moves the code onto the blockchain specified in the config (truffle.js)
 
-#Simulation
+# Simulation
 Run the codeblocks separately.
 1. Variable declaration
 2. Data generation for Primary User
