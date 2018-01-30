@@ -66,6 +66,7 @@ Run the codeblocks separately.
 1. Variable declaration
 2. Data generation for Primary User
 3. Simulation Scenario
+
 (Always need to run 1. & 2. before 3. Otherwise the data will be overwritten and hence the results invalid)
 Change the constants for desired numbers of helpers, simulation length etc. 
 The variable CHEATERS controls whether the model includes cheaters or not. 1 - cheaters included; 0 - cheaters not included
