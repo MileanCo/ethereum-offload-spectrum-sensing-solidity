@@ -163,7 +163,18 @@ contract SensingService {
       return true;
     }
 
+    function set_helpers_cheaters(address[] cheaters, uint round_index) public returns(bool) {
 
+      // TODO: iterate through cheaters and decrement their amount_owed if caught
+
+
+      ValidatedRound(round_index, true);
+
+    return true;
+
+    }
+
+    // TODO: send list of helpers who cheated [0,1]
     function setSensingDataForRound(address _helper, uint[] _data, uint round_index) public returns(bool) {
       SensingRound storage round = current_rounds_queue[round_index];
 

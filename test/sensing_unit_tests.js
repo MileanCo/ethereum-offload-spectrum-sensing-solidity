@@ -4,6 +4,9 @@ if (typeof web3 != 'undefined') {
 } else {
   web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 }
+var fs = require('fs');
+var contents = fs.readFileSync('test/Cheating_Record.json', 'utf8');
+var cheating_record_json = JSON.parse(contents);
 
 var ServiceFactory = artifacts.require("./ServiceFactory.sol");
 var SensingService = artifacts.require("./SensingService.sol");
@@ -33,6 +36,31 @@ contract('ServiceFactory', function(accounts) {
     // TODO: add fancy data
     return [1,1,0,1,1,1,1,0,0,0,1,0,1];
   }
+
+  function get_cheaters_round(round_index) {
+    if (round_index < 0) {
+      throw "no round_index provided";
+    }
+    // GET CHEATERS FOR ROUND I
+    // READY FROM FILE / Python
+
+    // READ who cheated in round from index
+    // create cheater array from that
+
+    var round_cheaters = cheating_record_json[round_index];
+    console.log(round_cheaters);
+    var cheaters_addr = [];
+    for (var i=0; i<round_cheaters.length; i++) {
+      var c = round_cheaters[i];
+      if (c) {
+        cheaters_addr.push(accounts[i]);
+      }
+    }
+    console.log(cheaters_addr);
+
+    return cheaters_addr;
+  }
+  get_cheaters_round(0);
 
   it("should save the address of the creator as the owner var ", function() {
     var serviceFactory;
@@ -121,20 +149,13 @@ contract('ServiceFactory', function(accounts) {
         assert.equal(tx_obj.logs[0].event, "RoundCompleted", "Invalid event occured");
         assert.equal(tx_obj.logs[1].event, "NotifyUsersToValidate", "Invalid event occured");
         // now send the users data for validation
-        console.log("set first account sensing data");
-        return sensingService.setSensingDataForRound(accounts[1], get_sensing_data(), roundId, {from: owner_su});
+        console.log("send list of cheaters for this round");
+        //return sensingService.setSensingDataForRound(accounts[1], get_sensing_data(), roundId, {from: owner_su});
+        var r_index = 0;
+        var cheaters = get_cheaters_round(r_index);
+        console.log(cheaters);
+        return sensingService.set_helpers_cheaters(cheaters, r_index, {from: owner_su});
 
-      }).then(function(tx_obj) {
-        console.log("No events should have occured");
-        console.log(tx_obj);
-        for (var i = 0; i < tx_obj.logs.length; i++) {
-          var log = tx_obj.logs[i];
-          console.log(log.event);
-        }
-        //assert.equal(tx_obj.logs[0].event, "RoundCompleted", "Invalid event occured");
-        // now send the users data for validation
-        console.log("set second account sensing data");
-        return sensingService.setSensingDataForRound(accounts[2], get_sensing_data_2(), roundId, {from: owner_su});
 
       }).then(function(tx_obj) {
         console.log("checking ValidatedRound event occured" );
@@ -143,8 +164,13 @@ contract('ServiceFactory', function(accounts) {
           var log = tx_obj.logs[i];
           console.log(log.event);
         }
-        assert.equal(tx_obj.logs[0].event, "ValidatedRound", "Invalid event occured");
-        console.log(tx_obj.logs[0].args);
+        if (tx_obj.logs[0]) {
+          assert.equal(tx_obj.logs[0].event, "ValidatedRound", "Invalid event occured");
+          console.log(tx_obj.logs[0].args);
+        } else {
+          assert("no events fired");
+        }
+
         // TEST DONE
         console.log("Account1 is withdrawing their credits (getting ether)");
         return  sensingService.withdraw({from:accounts[1]});
