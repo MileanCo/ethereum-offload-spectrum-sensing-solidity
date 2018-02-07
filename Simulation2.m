@@ -1,5 +1,5 @@
 clear all
-SIM_LENGTH = 100;                                                          %simulation length in seconds
+SIM_LENGTH = 10000;                                                          %simulation length in seconds
 SENSE_INT = 1;                                                                  %Sensing interval
 HELPER_INT = 1;                                                                 %With what frequency helpers send data
 NO_OF_HELPERS = 3;                                                             %no of helpers
@@ -39,7 +39,7 @@ end
 
 %% Randomize PU Activity with Markov Chains
  transition_probabilities = [0.9 0.1;0.1 0.9];
-chain = zeros(1,SIM_LENGTH);
+ chain = zeros(1,SIM_LENGTH);
     chain(1)=1;
     for i=2:SIM_LENGTH
         this_step_distribution = transition_probabilities(chain(i-1),:);
@@ -51,6 +51,8 @@ chain = zeros(1,SIM_LENGTH);
     %1 = 0, 2 = 1 
     chain(chain == 1) = 0;
     chain(chain == 2) = 1;
+    
+    PU_activity = chain;
 
 %% traditional case
 for j = 1 : 200
@@ -69,7 +71,7 @@ for j = 1 : 200
     SU_throughput(j) = sum(B*SU_activity_new)/SIM_LENGTH;
     %normalize
     SU_throughput(j) = SU_throughput(j) * (1 / (1 - (sum(PU_activity)/SIM_LENGTH)));
-    %clear SU_activity_new
+    lost_opportunities(j) = lost_opp(PU_activity, SU_activity);
 end
 
 figure(1)
@@ -80,6 +82,10 @@ figure(2)
 plot(1:size(no_of_collisions,2), no_of_collisions)
 xlabel('Sensing interval (s)');
 ylabel('No. of collisions');
+figure(3)
+plot(1:size(lost_opportunities,2), lost_opportunities)
+xlabel('Sensing interval (s)');
+ylabel('Lost opportunuties');
 
 
 %% Helpers Sensing Case
@@ -104,19 +110,24 @@ if CHEATERS == 0 %cheaters don't exist
         SUSS_throughput(j) = sum(B*SUSS_activity)/SIM_LENGTH;
         %normalize
         SUSS_throughput(j) = SUSS_throughput(j) * (1 / (1 - (sum(PU_activity)/SIM_LENGTH)));
+        lost_opportunities(j) = lost_opp(PU_activity, SUSS_activity);
     end
     
-    figure(3)
+    figure(4)
     plot(1:size(SUSS_throughput,2), SUSS_throughput)
     xlabel('Sensing interval (s)');
     ylabel('Throughput (bps)');
     title('Throughput with helpers and without cheaters');
     ylim([0 1])
-    figure(4)
+    figure(5)
     plot(1:size(no_of_collisionsSS,2), no_of_collisionsSS)
     xlabel('Sensing interval (s)');
     ylabel('No. of collisions');
     title('Collisions with helpers and without cheaters');
+    figure(6)
+    plot(1:size(lost_opportunities,2), lost_opportunities)
+    xlabel('Sensing interval (s)');
+    ylabel('Lost opportunuties');
     
 else %cheaters exist
     %change number of cheaters
@@ -130,7 +141,7 @@ else %cheaters exist
             helper_data(i,:) = round(rand(1,SIM_LENGTH));
         end
         
-        for j = 1 : 1
+        for j = 1 : 200
             HELPER_INT = j;
             for  k = 1 : HELPER_INT : SIM_LENGTH - HELPER_INT
                 %validate the helper data to find out whether the PU band
@@ -147,21 +158,24 @@ else %cheaters exist
             SUSS_throughput(j) = sum(B*SUSS_activity)/SIM_LENGTH;
             %normalize
             SUSS_throughput(j) = SUSS_throughput(j) * (1 / (1 - (sum(PU_activity)/SIM_LENGTH)));
+            lost_opportunities(j) = lost_opp(PU_activity, SUSS_activity);
         end
-        %SUSS_throughput(z) = sum(B*SUSS_activity)/SIM_LENGTH;
-        %no_of_collisionsSS(z) = collision(SUSS_activity, PU_activity);
     end
-    figure(3)
+    figure(4)
     plot(1:size(SUSS_throughput,2), SUSS_throughput)
     xlabel('Sensing interval (s)');
     ylabel('Throughput (bps)');
     ylim([0 1])
-    title('Throughput with helpers');
-    figure(4 )
+    title('Throughput with cheating helpers (minority)');
+    figure(5)
     plot(1:size(no_of_collisionsSS,2), no_of_collisionsSS)
     title('Collisions with helpers');
     xlabel('Sensing interval (s)');
     ylabel('No. of collisions');
+    figure(6)
+    plot(1:size(lost_opportunities,2), lost_opportunities)
+    xlabel('Sensing interval (s)');
+    ylabel('Lost opportunuties');
 end
 
 
