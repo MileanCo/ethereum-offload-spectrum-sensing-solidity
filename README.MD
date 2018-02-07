@@ -16,7 +16,7 @@ Forked from https://arxiv.org/abs/1703.04502
 
 # How to run simulations / scenarios
 7. npm install
-8. node js/client.js
+8. truffle exec  js/simulation.js
 
 # Example:
 Loquat:sla-solidity milean$ truffle compile<br>
