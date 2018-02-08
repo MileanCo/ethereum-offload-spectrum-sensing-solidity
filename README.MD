@@ -13,44 +13,36 @@ Forked from https://arxiv.org/abs/1703.04502
 4. truffle compile
 5. truffle migrate (this will 'connect' to your local instance of Ethereum (Ganache), utilizing the dev settings in truffle.js)
 6. truffle test
+7. truffle exec  js/simulation.js
 
 # How to run simulations / scenarios
 7. npm install
 8. truffle exec  js/simulation.js
 
 # Example:
-Loquat:sla-solidity milean$ truffle compile<br>
-
-Loquat:sla-solidity milean$ truffle migrate<br>
+Loquat:sla-solidity milean$ truffle exec  js/simulation.js <br>
 Using network 'development'.<br>
-Network up to date.<br>
-Loquat:sla-solidity milean$<br>
-Loquat:sla-solidity milean$ node js/client.js<br>
-Balance of account 0: 99.629911599999734558<br>
-Balance of account 1: 100.0080582<br>
+<br>
+Starting with owner:<br>
+0x627306090abab3a6e1400e9345bc60c78a8bef57<br>
+Starting with helpers:<br>
+[ '0xf17f52151ebef6c7334fad080c5704d77216b732',<br>
+  '0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef' ]<br>
+Starting with sensing_band 10 bandwidth_granularity 100 costPerRound 1000000000000000000<br>
+newSensingService()<br>
+got new SensingService contract at 0xf2beae25b23f0ccdd234410354cb42d08ed54981<br>
+increasing funds for sensingContract from owner's account<br>
+<br>
+set interval to run at 2000<br>
 Connection successful<br>
 Requesting node: default<br>
-Parsed Downlink throughput: 0.22<br>
-Parsed Downlink throughput: 0.21<br>
-Parsed Downlink throughput: 0.66<br>
-Parsed Downlink throughput: 1.07<br>
-Avg throughput over 5 seconds: 0.54<br>
-Payment notification event fired.<br>
-Parsed Downlink throughput: 0.2<br>
-Parsed Downlink throughput: 0.21<br>
-Parsed Downlink throughput: 0.59<br>
-Parsed Downlink throughput: 1.08<br>
-Parsed Downlink throughput: 0.8
-<br>Avg throughput over 5 seconds: 0.576
-<br>Payment notification event fired.
-<br>Parsed Downlink throughput: 0.4
-<br>Parsed Downlink throughput: 0.49
-<br>Parsed Downlink throughput: 4.02
-<br>Parsed Downlink throughput: 1.67
-<br>Parsed Downlink throughput: 0.78
-<br>Avg throughput over 5 seconds: 1.472
-<br>Payment notification event fired.
-<br>Parsed Downlink throughput: 1.03<br>
+Running round 0<br>
+events:<br>
+NewRoundCreated<br>
+RoundCompleted<br>
+NotifyUsersToValidate<br>
+IncrementedAmountOwed<br>
+IncrementedAmountOwed<br>
 ^C
 
 # Some notes on Ethereum Blockchain, solidity, spectrum sensing, etc
