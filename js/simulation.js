@@ -7,6 +7,7 @@ module.exports = function(callback) {
   } else {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:7545'));
   }
+  var assert = require('assert');
   var accounts = web3.eth.accounts;
 
   // CONFIG VARS
@@ -27,8 +28,6 @@ module.exports = function(callback) {
   console.log("Starting with helpers:");
   console.log(helpers_list);
   console.log("Starting with sensing_band %s bandwidth_granularity %s _costPerRound %s", sensing_band, bandwidth_granularity, _costPerRound);
-
-  //const _costPerKbps = web3.toWei(1, 'szabo');
 
   // READ CHEATING RECORD JSON FILE
   var fs = require('fs');
@@ -56,19 +55,6 @@ module.exports = function(callback) {
 
     return cheaters_addr;
   }
-  // test this works
-  get_cheaters_round(0);
-
-  /**
-  // DOESNT WORK: THIS HAS CHANGED IN truffle-contract ^ 3.0
-  const contract = require('truffle-contract');
-  const ServiceFactory_artifacts = require('../build/contracts/ServiceFactory.json');
-  const SensingService_artifacts = require('../build/contracts/SensingService.json');
-
-  let ServiceFactory = contract(ServiceFactory_artifacts);
-  let SensingService = contract(SensingService_artifacts);
-  ServiceFactory.setProvider(web3.currentProvider);
-  SensingService.setProvider(web3.currentProvider);*/
 
   // deploy contract and register provider
   var ServiceFactoryContract = artifacts.require("./ServiceFactory.sol");
@@ -80,7 +66,6 @@ module.exports = function(callback) {
 
   ServiceFactoryContract.deployed().then(function(instance) {
     serviceFactory = instance;
-    //console.log(serviceFactory);
     // returns transaction
     console.log("newSensingService()");
     //address[] helpers, uint _sensing_band, uint _bandwidth_granularity, uint _costPerRound
@@ -95,7 +80,7 @@ module.exports = function(callback) {
         sensingService = instance;
         //if (web3.eth.fromWei(web3.eth.getBalance(SLA.address)) < 5) {
         console.log("increasing funds for sensingContract from owner's account");
-        return sensingService.increaseFunds({from: owner_su, value: web3.toWei(_relativeCostPerRound*3, "ether") });
+        return sensingService.increaseFunds({from: owner_su, value: web3.toWei(_relativeCostPerRound*50, "ether") });
       }).then(function(tx_obj) {
         console.log(tx_obj);
         main();
@@ -106,15 +91,15 @@ module.exports = function(callback) {
   // errors for Factory
   }).catch( function(error) {
       console.log(error);
-      //assert.fail();
+      assert.fail();
   });
 
   //hej
-
+  var round_index = 0;
   function main() {
     // Enter here the name of the node you want to listen to (eg dub, bcn0, bcn1, etc.)
     node_name = "default"
-    time_interval = 1 * 1 * 1000; // interval in ms over which compute the throughput
+    time_interval = 1 * 2 * 1000; // interval in ms over which compute the throughput
     var WebSocket = require('ws');
     var ws = new WebSocket('ws://airscope.ie:8080/','ascope');
     ws.on('open', function() {
@@ -138,35 +123,50 @@ module.exports = function(callback) {
   }
 
 
-  var round_index = 0;
   function run_round() {
     console.log("Running round " + round_index);
-    return sensingService.helperNotifyDataSent(helpers_list[0], {from: owner_su})
-    .then(function() {
-      sensingService.helperNotifyDataSent(helpers_list[1], {from: owner_su})
-      .then(function() {
+    return sensingService.helperNotifyDataSent(helpers_list[0], round_index, {from: helpers_list[0]})
+    .then(function(tx_obj) {
+      console.log(tx_obj);
+      assert.equal(tx_obj.logs[0].event, "NewRoundCreated");
+      console.log(tx_obj.logs[0].event);
+      var id = tx_obj.logs[0].args.round_index;
+      console.log(id.toNumber());
+      console.log(tx_obj.logs[1]);
+
+      sensingService.helperNotifyDataSent(helpers_list[1], round_index, {from: helpers_list[1]})
+      .then(function(tx_obj) {
+        //console.log(tx_obj);
+        assert.equal(tx_obj.logs[0].event, "RoundCompleted");
+        console.log(tx_obj.logs[0].event);
+        assert.equal(tx_obj.logs[1].event, "NotifyUsersToValidate");
+        console.log(tx_obj.logs[1].event);
+        console.log(tx_obj.logs[2].event);
+        console.log(tx_obj.logs[3].event);
         var cheaters = get_cheaters_round(round_index);
-        console.log(cheaters);
-        sensingService.set_helpers_cheaters(cheaters, round_index, {from: owner_su});
-        round_index ++;
-        payout();
-      })
+        console.log("Cheaters: " + cheaters);
+        sensingService.set_helpers_cheaters(cheaters, round_index, {from: owner_su})
+        .then(function(tx_obj) {
+          round_index ++;
+          payout();
+          console.log("\n");
+        });
+      });
     });
   };
 
   function payout(throughput) {
     return  sensingService.withdraw({from:helpers_list[0]})
-      .then( function() {
+      .then( function(tx_obj) {
+          console.log(tx_obj.logs[0].event);
+          var amount_owned = tx_obj.logs[0].args.amount_owed;
+          console.log("Amount owed withdrawn: " + amount_owned.toNumber() + " from helper " + helpers_list[0]);
           sensingService.withdraw({from:helpers_list[1]})
+          .then( function(tx_obj) {
+              console.log(tx_obj.logs[0].event);
+              var amount_owned = tx_obj.logs[0].args.amount_owed;
+              console.log("Amount owed withdrawn: " + amount_owned.toNumber() + " from helper " + helpers_list[1]);
+          });
       });
-
-    /*
-    var kbps_tput = throughput * 1024;
-    return sla.notifyPayment(provider, kbps_tput, {from: owner})
-    .then(function(notify_txid){
-      console.log("Payment notification event fired.");
-    }).catch(function(error){
-      console.log(error);
-    });*/
   }
 }
