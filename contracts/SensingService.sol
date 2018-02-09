@@ -43,14 +43,15 @@ contract SensingService {
 
     // EVENTS for testing purposes, notify when a new SensingRound is started/created
     event NewRoundCreated(uint  round_index);
-    event RoundDeleted(uint indexed round_index);
+    event RoundDeleted(uint  round_index);
     event DebugInt(uint integer);
     event HelperAlreadySent(address helper, uint round_index);
     event IncrementedAmountOwed(address helper, uint round_index);
 
     // Useful events
-    event NotifyUsersToValidate(uint indexed roundId);
-    event ValidatedRound(uint indexed roundId, bool valid);
+    event NotifyUsersToValidate(uint  roundId);
+    event ValidatedRound(uint  roundId, bool valid);
+    event PenalizedHelperForRound(uint roundId, address helper, uint amount_owed);
     event Payout(address indexed _provider,
                     uint indexed _timestamp,
                     uint amount_owed
@@ -162,7 +163,7 @@ contract SensingService {
 
       // Increase amount_owed (payment owed) to all helpers
       for (uint i=0; i <= round.num_helpers_sent; i++) {
-        HelperProvider hp = helperProviders[round.helpersSentIndex[i]];
+        HelperProvider storage hp = helperProviders[round.helpersSentIndex[i]];
         hp.amount_owed += 1;
         IncrementedAmountOwed(round.helpersSentIndex[i], round_index);
       }
@@ -178,20 +179,17 @@ contract SensingService {
       RoundDeleted(round_index);
     }
 
-    function set_helpers_cheaters(address[] cheaters, uint round_index) public returns(bool) {
+    function penalize_cheaters(address[] cheaters, uint round_index) public returns(bool) {
       SensingRound storage round = current_rounds_queue[round_index];
 
       // TODO: iterate through cheaters and decrement their amount_owed if caught
-      for (uint i=0; i <= cheaters.length; i++) {
+      for (uint i=0; i < cheaters.length; i++) {
         address cheater_addr = cheaters[i];
-        HelperProvider hp = helperProviders[cheater_addr];
+        HelperProvider storage hp = helperProviders[cheater_addr];
         hp.amount_owed -= 1;
-
+        PenalizedHelperForRound(round_index, cheater_addr, hp.amount_owed);
       }
-      ValidatedRound(round_index, true);
-
-    return true;
-
+      return true;
     }
 
     // TODO: send list of helpers who cheated [0,1]
@@ -250,7 +248,7 @@ contract SensingService {
     msg.sender = helper
      */
     function withdraw() public returns(bool) {
-      HelperProvider hp = helperProviders[msg.sender];
+      HelperProvider storage hp = helperProviders[msg.sender];
       if (hp.amount_owed <= 0) {
         return false;
       }

@@ -43,15 +43,19 @@ module.exports = function(callback) {
     // READ who cheated in round from index
     // create cheater array from that
     var round_cheaters = cheating_record_json[round_index];
-    console.log(round_cheaters);
+    //console.log(round_cheaters);
     var cheaters_addr = [];
     for (var i=0; i<round_cheaters.length; i++) {
       var c = round_cheaters[i];
+      var helper_index = i + 1; // +1 b/c [0] = su_owner
       if (c) {
-        cheaters_addr.push(accounts[i]);
+        if (helper_index > helpers_list.length) {
+          throw ("cannot use an account that is not in helpers_list");
+        }
+        cheaters_addr.push(accounts[helper_index]);
+
       }
     }
-    console.log(cheaters_addr);
 
     return cheaters_addr;
   }
@@ -80,7 +84,7 @@ module.exports = function(callback) {
         sensingService = instance;
         //if (web3.eth.fromWei(web3.eth.getBalance(SLA.address)) < 5) {
         console.log("increasing funds for sensingContract from owner's account");
-        return sensingService.increaseFunds({from: owner_su, value: web3.toWei(_relativeCostPerRound*50, "ether") });
+        return sensingService.increaseFunds({from: owner_su, value: web3.toWei(_relativeCostPerRound*25, "ether") });
       }).then(function(tx_obj) {
         console.log(tx_obj);
         main();
@@ -144,28 +148,43 @@ module.exports = function(callback) {
         console.log(tx_obj.logs[2].event);
         console.log(tx_obj.logs[3].event);
         var cheaters = get_cheaters_round(round_index);
-        console.log("Cheaters: " + cheaters);
-        sensingService.set_helpers_cheaters(cheaters, round_index, {from: owner_su})
+        console.log("Cheaters: ");
+        console.log(cheaters);
+        sensingService.penalize_cheaters(cheaters, round_index, {from: owner_su})
         .then(function(tx_obj) {
-          round_index ++;
+          if (cheaters[0]) {
+            console.log(tx_obj.logs[0].event);
+            console.log(tx_obj.logs[0].args.amount_owed.toNumber());
+          }
           payout();
+          round_index ++;
           console.log("\n");
         });
       });
     });
   };
 
-  function payout(throughput) {
+  function payout() {
     return  sensingService.withdraw({from:helpers_list[0]})
       .then( function(tx_obj) {
-          console.log(tx_obj.logs[0].event);
-          var amount_owned = tx_obj.logs[0].args.amount_owed;
-          console.log("Amount owed withdrawn: " + amount_owned.toNumber() + " from helper " + helpers_list[0]);
+
+          if (tx_obj.logs[0]) {
+            console.log(tx_obj.logs[0].event);
+            var amount_owned = tx_obj.logs[0].args.amount_owed;
+            console.log("Amount owed withdrawn: " + amount_owned.toNumber() + " from helper " + helpers_list[0]);
+          } else {
+            console.log("No money to withdraw from this round (penalized)");
+          }
+
           sensingService.withdraw({from:helpers_list[1]})
           .then( function(tx_obj) {
-              console.log(tx_obj.logs[0].event);
-              var amount_owned = tx_obj.logs[0].args.amount_owed;
-              console.log("Amount owed withdrawn: " + amount_owned.toNumber() + " from helper " + helpers_list[1]);
+              if (tx_obj.logs[0]) {
+                console.log(tx_obj.logs[0].event);
+                var amount_owned = tx_obj.logs[0].args.amount_owed;
+                console.log("Amount owed withdrawn: " + amount_owned.toNumber() + " from helper " + helpers_list[1]);
+              } else {
+                console.log("No money to withdraw from this round (penalized)");
+              }
           });
       });
   }
