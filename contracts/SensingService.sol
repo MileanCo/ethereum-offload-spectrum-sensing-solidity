@@ -192,39 +192,6 @@ contract SensingService {
       return true;
     }
 
-    // TODO: send list of helpers who cheated [0,1]
-/**
-    function setSensingDataForRound(address _helper, uint[] _data, uint round_index) public returns(bool) {
-      SensingRound storage round = current_rounds_queue[round_index];
-
-      if (round.spectrum_data[_helper].data.length > 0) {
-        // ALREADY got this round
-        return false;
-      }
-      // check that this Helper actually participated in this round
-      round.spectrum_data[_helper] = SpectrumData({
-        data: _data
-      });
-
-      // TODO: determine if we should validate_round
-      uint num_helpers_sent_spectrum_data = 0;
-      for (uint j=0; j < round.num_helpers_sent; j++) {
-        address other_helper = round.helpersSentIndex[j];
-        // has this other_helper set their SpectrumData yet?
-        if (round.spectrum_data[other_helper].data.length > 0) {
-          num_helpers_sent_spectrum_data++;
-        }
-      }
-
-      // if received all helpers in this round
-      if (num_helpers_sent_spectrum_data >= round.num_helpers_sent) {
-        bool valid = _validate_round(round_index);
-      }
-
-      return true;
-    }
-*/
-
     function _validate_round(uint round_index) private returns (bool) {
       bool valid = true;
       uint index_to_check = 0;

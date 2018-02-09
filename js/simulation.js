@@ -1,5 +1,4 @@
 module.exports = function(callback) {
-  // console.log(sla_artifacts);
   // load web3 to interact with the blockchain
   var Web3 = require('web3')
   if (typeof web3 != 'undefined') {
@@ -10,7 +9,9 @@ module.exports = function(callback) {
   var assert = require('assert');
   var accounts = web3.eth.accounts;
 
-  // CONFIG VARS
+  //
+  // START CONFIG
+  //
   var sensing_band = 10;
   var bandwidth_granularity = 100;
   var owner_su = accounts[0];
@@ -19,7 +20,6 @@ module.exports = function(callback) {
     accounts[2],
     accounts[3]
   ];
-
   var data = {
     TOTAL_ROUNDS_TO_RUN : 3,
     round_index : 0,
@@ -28,6 +28,10 @@ module.exports = function(callback) {
       gasUsed : 0
     },
   };
+  //
+  // END CONFIG
+  //
+
   // Set data for each helper being used
   for (var i=0;i<helpers_list.length;i++) {
     data.helpers.push(
@@ -49,12 +53,11 @@ module.exports = function(callback) {
   var fs = require('fs');
   var contents = fs.readFileSync('test/Cheating_Record.json', 'utf8');
   var cheating_record_json = JSON.parse(contents);
+
   function get_cheaters_round(round_index) {
     if (round_index < 0) {
       throw "no round_index provided";
     }
-    // GET CHEATERS FOR ROUND I
-    // READY FROM FILE / Python
 
     // READ who cheated in round from index
     // create cheater array from that
@@ -222,9 +225,8 @@ module.exports = function(callback) {
 
     }
   }
+  // iterate through cheaters and decrement their amount_owed if caught
   function update_helper_data_for(cheaters) {
-
-    // TODO: iterate through cheaters and decrement their amount_owed if caught
     for (var i=0; i < cheaters.length; i++) {
       for (var h of data.helpers) {
         //console.log(h);
