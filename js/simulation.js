@@ -17,22 +17,26 @@ module.exports = function(callback) {
   var helpers_list = [
     accounts[1],
     accounts[2],
-    //accounts[3],
+    accounts[3]
   ];
 
   var data = {
-    TOTAL_ROUNDS_TO_RUN : 5,
+    TOTAL_ROUNDS_TO_RUN : 3,
     round_index : 0,
-    helpers:[
-      {gasUsed:0, times_cheated:0, addr:helpers_list[0]},
-      {gasUsed:0, times_cheated:0, addr:helpers_list[1]},
-    ],
+    helpers:[],
     su : {
       gasUsed : 0
     },
   };
+  // Set data for each helper being used
+  for (var i=0;i<helpers_list.length;i++) {
+    data.helpers.push(
+      {gasUsed:0, times_cheated:0, addr:helpers_list[i]},
+    );
+  }
+  console.log(data);
 
-  const _relativeCostPerRound = 1;
+  const _relativeCostPerRound = 5;
   const _costPerRound = web3.toWei(_relativeCostPerRound, "ether");
 
   console.log("Starting with owner:");
@@ -65,7 +69,6 @@ module.exports = function(callback) {
           throw ("cannot use an account that is not in helpers_list");
         }
         cheaters_addr.push(accounts[helper_index]);
-
       }
     }
 
@@ -78,7 +81,6 @@ module.exports = function(callback) {
 
   var serviceFactory;
   var sensingService;
-
 
   ServiceFactoryContract.deployed().then(function(instance) {
     serviceFactory = instance;
@@ -96,7 +98,8 @@ module.exports = function(callback) {
         sensingService = instance;
         //if (web3.eth.fromWei(web3.eth.getBalance(SLA.address)) < 5) {
         console.log("increasing funds for sensingContract from owner's account");
-        return sensingService.increaseFunds({from: owner_su, value: web3.toWei(_relativeCostPerRound*25, "ether") });
+        var needed_balance = _relativeCostPerRound * data.TOTAL_ROUNDS_TO_RUN * (helpers_list.length+1);
+        return sensingService.increaseFunds({from: owner_su, value: web3.toWei(needed_balance, "ether") });
       }).then(function(tx_obj) {
         console.log(tx_obj);
         main();
@@ -110,10 +113,11 @@ module.exports = function(callback) {
       assert.fail();
   });
 
+  var main_round_loop;
   function main() {
     // Enter here the name of the node you want to listen to (eg dub, bcn0, bcn1, etc.)
     node_name = "default"
-    time_interval = 1 * 2 * 1000; // interval in ms over which compute the throughput
+
     var WebSocket = require('ws');
     var ws = new WebSocket('ws://airscope.ie:8080/','ascope');
     ws.on('open', function() {
@@ -123,8 +127,12 @@ module.exports = function(callback) {
     });
     var is_first = true;
     var tput_values = [];
+
+    var time_interval = 1 * 2 * 1000; // interval in ms over which compute the throughput
     console.log("set interval to run at " + time_interval);
-    setInterval(run_round, time_interval);
+    // launch this inside a Fiber so we can do synchronous calls (no callback hell)
+    main_round_loop = setInterval(run_round, time_interval);
+
     ws.on('message', function(data, flags) {
       if (is_first) {
         // First message is list of available nodes
@@ -137,25 +145,32 @@ module.exports = function(callback) {
   }
 
 
-  function run_round() {
+  async function run_round() {
     if (data.round_index > data.TOTAL_ROUNDS_TO_RUN) {
-      console.log("LAST ROUND REACHED " + data.round_index);
+      console.log("\n############\n LAST ROUND REACHED " + data.round_index);
+      await pay_rounds();
+      //throw("DONE");
+      clearInterval(main_round_loop);
       console.log(data);
-      throw("DONE");
+      return;
     }
-    console.log("Running round " + data.round_index);
-    return sensingService.helperNotifyDataSent(helpers_list[0], data.round_index, {from: helpers_list[0]})
-    .then(function(tx_obj) {
-      console.log(tx_obj);
-      assert.equal(tx_obj.logs[0].event, "NewRoundCreated");
-      console.log(tx_obj.logs[0].event);
-      data.helpers[0].gasUsed += tx_obj.receipt.gasUsed;
-      var id = tx_obj.logs[0].args.round_index;
-      console.log(id.toNumber());
-      console.log(tx_obj.logs[1]);
 
-      sensingService.helperNotifyDataSent(helpers_list[1], data.round_index, {from: helpers_list[1]})
-      .then(function(tx_obj) {
+    for (var i=0; i < helpers_list.length; i++) {
+      //var index = i;
+      console.log("sensingService.helperNotifyDataSent + i " + i);
+      //sensingService.helperNotifyDataSent(helpers_list[i], data.round_index, {from: helpers_list[i]} ).then(function(tx_obj) {
+      var tx_obj = await sensingService.helperNotifyDataSent(helpers_list[i], data.round_index, {from: helpers_list[i]} );
+      console.log(tx_obj);
+      data.helpers[i].gasUsed += tx_obj.receipt.gasUsed;
+
+      if (i==0) {
+        assert.equal(tx_obj.logs[0].event, "NewRoundCreated");
+        console.log(tx_obj.logs[0].event);
+        var id = tx_obj.logs[0].args.round_index;
+        console.log("new round from solidity: " + id.toNumber());
+        console.log(tx_obj.logs[1]);
+      // if it's the last i
+      } else if (i == helpers_list.length-1){
         //console.log(tx_obj);
         assert.equal(tx_obj.logs[0].event, "RoundCompleted");
         console.log(tx_obj.logs[0].event);
@@ -163,58 +178,58 @@ module.exports = function(callback) {
         console.log(tx_obj.logs[1].event);
         console.log(tx_obj.logs[2].event);
         console.log(tx_obj.logs[3].event);
-        data.helpers[1].gasUsed += tx_obj.receipt.gasUsed;
-        var cheaters = get_cheaters_round(data.round_index);
-        console.log("Cheaters: ");
-        console.log(cheaters);
-        sensingService.penalize_cheaters(cheaters, data.round_index, {from: owner_su})
-        .then(function(tx_obj) {
-          update_helper_data_for(cheaters);
-          data.su.gasUsed += tx_obj.receipt.gasUsed;
-          if (cheaters[0]) {
-            console.log(tx_obj.logs[0].event);
-            console.log(tx_obj.logs[0].args.amount_owed.toNumber());
-          }
-          payout();
-          data.round_index ++;
-          console.log("\n");
-        });
-      });
-    });
+      }
+
+    }
+    data.round_index++;
   };
 
-  function payout() {
-    return  sensingService.withdraw({from:helpers_list[0]})
-      .then( function(tx_obj) {
+  async function pay_rounds() {
+    // iterate through all rounds and penalize accordingly
+    for (var i=0; i < data.TOTAL_ROUNDS_TO_RUN; i++) {
+      var cheaters = get_cheaters_round(i);
+      console.log("Checking cheaters for round " + i);
+      console.log("Cheaters: " + cheaters);
+      var tx_obj = await sensingService.penalize_cheaters(cheaters, i, {from: owner_su});
+      if (tx_obj.logs[0]) {
+        console.log(tx_obj.logs[0].event);
+      }
+      data.su.gasUsed += tx_obj.receipt.gasUsed;
 
-          if (tx_obj.logs[0]) {
-            console.log(tx_obj.logs[0].event);
-            var amount_owned = tx_obj.logs[0].args.amount_owed;
-            console.log("Amount owed withdrawn: " + amount_owned.toNumber() + " from helper " + helpers_list[0]);
-          } else {
-            console.log("No money to withdraw from this round (penalized)");
+      if (cheaters[0]) {
+        console.log(tx_obj.logs[0].event);
+        console.log(tx_obj.logs[0].args.amount_owed.toNumber());
+      }
+      console.log("\n");
+    }
+    // now helpers withdraw from their accounts
+    await helpers_withdraw_amount_owed();
+    update_helper_data_for(cheaters);
+  }
 
-          }
+  async function helpers_withdraw_amount_owed() {
+    for (var i=0; i < helpers_list.length; i++) {
+      var tx_obj = await sensingService.withdraw({from:helpers_list[i]});
 
-          sensingService.withdraw({from:helpers_list[1]})
-          .then( function(tx_obj) {
-              if (tx_obj.logs[0]) {
-                console.log(tx_obj.logs[0].event);
-                var amount_owned = tx_obj.logs[0].args.amount_owed;
-                console.log("Amount owed withdrawn: " + amount_owned.toNumber() + " from helper " + helpers_list[1]);
-              } else {
-                console.log("No money to withdraw from this round (penalized)");
-              }
-          });
-      });
+      if (tx_obj.logs[0]) {
+        console.log(tx_obj.logs[0].event);
+        var amount_owned = tx_obj.logs[0].args.amount_owed;
+        console.log("Amount owed withdrawn: " + amount_owned.toNumber() + " from helper " + helpers_list[i] );
+      } else {
+        console.log("No money to withdraw from this round (penalized)");
+      }
+      data.helpers[i].gasUsed += tx_obj.receipt.gasUsed;
+
+    }
   }
   function update_helper_data_for(cheaters) {
 
     // TODO: iterate through cheaters and decrement their amount_owed if caught
     for (var i=0; i < cheaters.length; i++) {
       for (var h of data.helpers) {
+        //console.log(h);
         if (h.addr === cheaters[i]) {
-          h.times_cheated ++;
+          h.times_cheated += 1;
         }
       }
     }
