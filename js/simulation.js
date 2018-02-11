@@ -19,6 +19,14 @@ module.exports = function(callback) {
     accounts[1],
     accounts[2],
     accounts[3]
+    /*,
+    accounts[4],
+    accounts[5],
+    accounts[6],
+    accounts[7],
+    accounts[8],
+    accounts[9],
+    accounts[10]*/
   ];
   var data = {
     TOTAL_ROUNDS_TO_RUN : 3,
@@ -31,11 +39,12 @@ module.exports = function(callback) {
   //
   // END CONFIG
   //
-
+  //error msg if number of helpers don't correlate with no. of accounts in Ganache
+if (helpers_list.length > accounts.length) throw "not enough accounts in Ganache/Ethereum"
   // Set data for each helper being used
   for (var i=0;i<helpers_list.length;i++) {
     data.helpers.push(
-      {gasUsed:0, times_cheated:0, addr:helpers_list[i]},
+      {gasUsed:0, times_cheated:0, addr:helpers_list[i],}
     );
   }
   console.log(data);
