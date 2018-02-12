@@ -5,6 +5,7 @@ Forked from https://arxiv.org/abs/1703.04502
 # Setup
 1. Install [TruffleJS](https://github.com/trufflesuite/truffle)
 2. Install [Ganache](http://truffleframework.com/ganache/) - run a local Ethereum blockchain to run tests, execute commands, and inspect state
+3. Install [NodeJS](https://nodejs.org/en/) > version 9
 
 # How to Run
 1. start Ganache
