@@ -21,8 +21,15 @@ module.exports = function(callback) {
   var helpers_list = [
     accounts[1],
     accounts[2],
-    //accounts[3],
-    //accounts[4]
+    accounts[3],
+    accounts[4],
+    /*,
+    accounts[5],
+    accounts[6],
+    accounts[7],
+    accounts[8],
+    accounts[9],
+    accounts[10]*/
   ];
   var TOTAL_ROUNDS_TO_RUN = 10;
   //
@@ -38,9 +45,7 @@ module.exports = function(callback) {
 
   // Set data for each helper being used
   for (var i=0;i<helpers_list.length;i++) {
-    //data.helpers.push(
     data.helpers[helpers_list[i]] = {gasUsed:0, times_cheated:0};
-    //);
   }
   console.log(data);
 
@@ -175,16 +180,6 @@ module.exports = function(callback) {
       // find which helper this is
       var helper_addr = helpers_list_reordered[i];
       data.helpers[helper_addr].gasUsed += tx_obj.receipt.gasUsed;
-      /**
-      for (var j=0; j < data.helpers.length; j++) {
-        if (data.helpers[j].addr === helpers_list_reordered[i].addr) {
-          console.error("INCREMENTED " + tx_obj.receipt.gasUsed);
-          data.helpers[j].gasUsed += tx_obj.receipt.gasUsed;
-          break;
-        }
-
-      }
-*/
       if (i==0) {
         assert.equal(tx_obj.logs[0].event, "NewRoundCreated");
         console.log(tx_obj.logs[0].event);
@@ -250,12 +245,6 @@ module.exports = function(callback) {
   function update_helper_data_for(cheaters) {
     for (var i=0; i < cheaters.length; i++) {
       data.helpers[cheaters[i]].times_cheated += 1;
-      /**
-      for (var j=0;j<data.helpers.length;j++) {
-        if (data.helpers[j].addr === cheaters[i]) {
-          data.helpers[j].times_cheated += 1;
-        }
-      }*/
     }
     return true;
   }
