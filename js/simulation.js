@@ -21,8 +21,8 @@ module.exports = function(callback) {
   var helpers_list = [
     accounts[1],
     accounts[2],
-    accounts[3],
-    accounts[4],
+    //accounts[3],
+    //accounts[4],
     /*,
     accounts[5],
     accounts[6],
@@ -41,6 +41,9 @@ module.exports = function(callback) {
     su : {
       gasUsed : 0
     },
+    rounds:{
+
+    }
   };
 
   // Set data for each helper being used
@@ -140,7 +143,7 @@ module.exports = function(callback) {
     var is_first = true;
     var tput_values = [];
 
-    var time_interval = 1 * 2 * 1000; // interval in ms over which compute the throughput
+    var time_interval = 1 * 5 * 1000; // interval in ms over which compute the throughput
     console.log("set interval to run at " + time_interval);
     // launch this inside a Fiber so we can do synchronous calls (no callback hell)
     main_round_loop = setInterval(run_round, time_interval);
@@ -156,6 +159,17 @@ module.exports = function(callback) {
     });
   }
 
+  // https://ethereum.stackexchange.com/questions/4027/how-do-you-get-the-balance-of-an-account-using-truffle-ether-pudding
+  const promisify = (inner) =>
+    new Promise((resolve, reject) =>
+      inner((err, res) => {
+        if (err) { reject(err) }
+        resolve(res);
+      })
+    );
+  const getBalance = (account, at) =>
+    promisify(cb => web3.eth.getBalance(account, at, cb));
+
 
   async function run_round() {
     if (data.round_index > TOTAL_ROUNDS_TO_RUN) {
@@ -165,13 +179,16 @@ module.exports = function(callback) {
       clearInterval(main_round_loop);
       data.TOTAL_ROUNDS_TO_RUN = TOTAL_ROUNDS_TO_RUN;
       console.log(data);
+      console.log(data.rounds);
       return;
     }
 
+    data.rounds[data.round_index] = {};
     // randomly reorder array to simulate different arrival times of messages from helpers
     var helpers_list_reordered = shuffle.shuffle(helpers_list.slice());
 
     for (var i=0; i < helpers_list_reordered.length; i++) {
+      data.rounds[data.round_index][helpers_list_reordered[i]] = {};
       //var index = i;
       console.log("sensingService.helperNotifyDataSent + i " + i);
       //sensingService.helperNotifyDataSent(helpers_list[i], data.round_index, {from: helpers_list[i]} ).then(function(tx_obj) {
@@ -179,7 +196,17 @@ module.exports = function(callback) {
       console.log(tx_obj);
       // find which helper this is
       var helper_addr = helpers_list_reordered[i];
+
+      // add usage data for charts
+      var cheaters = get_cheaters_round(i);
       data.helpers[helper_addr].gasUsed += tx_obj.receipt.gasUsed;
+      data.rounds[data.round_index][helpers_list_reordered[i]].gasUsed = tx_obj.receipt.gasUsed;
+      data.rounds[data.round_index][helpers_list_reordered[i]].ether = await getBalance(helpers_list_reordered[i]);
+      data.rounds[data.round_index][helpers_list_reordered[i]].ether = web3.fromWei(data.rounds[data.round_index][helpers_list_reordered[i]].ether);
+      if (cheaters.indexOf(helpers_list_reordered[i]) >= 0) {
+        data.rounds[data.round_index][helpers_list_reordered[i]].cheated = 1;
+      }
+
       if (i==0) {
         assert.equal(tx_obj.logs[0].event, "NewRoundCreated");
         console.log(tx_obj.logs[0].event);
@@ -196,8 +223,8 @@ module.exports = function(callback) {
         console.log(tx_obj.logs[2].event);
         console.log(tx_obj.logs[3].event);
       }
-
     }
+
     data.round_index++;
   };
 
