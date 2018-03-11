@@ -32,9 +32,12 @@ module.exports = function(callback) {
     accounts[10]*/
   ];
   var TOTAL_ROUNDS_TO_RUN = 10;
+  var ROUND_SLEEP_SECONDS = 3;
   //
   // END CONFIG
   //
+
+
   var data = {
     round_index : 0,
     helpers:{},
@@ -143,7 +146,7 @@ module.exports = function(callback) {
     var is_first = true;
     var tput_values = [];
 
-    var time_interval = 1 * 5 * 1000; // interval in ms over which compute the throughput
+    var time_interval = 1 * ROUND_SLEEP_SECONDS * 1000; // interval in ms over which compute the throughput
     console.log("set interval to run at " + time_interval);
     // launch this inside a Fiber so we can do synchronous calls (no callback hell)
     main_round_loop = setInterval(run_round, time_interval);

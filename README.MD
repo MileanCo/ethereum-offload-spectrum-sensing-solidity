@@ -19,6 +19,11 @@ Forked from https://arxiv.org/abs/1703.04502
 # How to run simulations / scenarios
 7. npm install
 8. truffle exec  js/simulation.js
+<br>
+The simulation script runs for about 10 rounds, where for each round every Helper sends the SU their share of spectrum data, and notifies the contract this has been done. This increases the Helper's amount_owed in the contract. For each of these rounds, a cheater is identified. The cheater's amount_owed is decremented everytime they are "detected" (in test/Cheating_Record.json). At the end of the 10 rounds, each Helper calls withdraw() on the contract to get their amount_owed of money from the SU (SU initially puts in some Ether (money) for the contract to spend). <br>
+
+The config of the simulation.js is in lines ~17-33.
+<br>
 
 # Example:
 Loquat:sla-solidity milean$ truffle exec  js/simulation.js <br>
@@ -43,7 +48,17 @@ NewRoundCreated<br>
 RoundCompleted<br>
 NotifyUsersToValidate<br>
 IncrementedAmountOwed<br>
-IncrementedAmountOwed<br>
+...
+Payout<br>
+Amount owed withdrawn: 5000000000000000000 from helper 0xf17f52151ebef6c7334fad080c5704d77216b732<br>
+Payout<br>
+Amount owed withdrawn: 11000000000000000000 from helper 0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef<br>
+{ round_index: 11,<br>
+  helpers: <br>
+   { '0xf17f52151ebef6c7334fad080c5704d77216b732': { gasUsed: 1233808, times_cheated: 6 },<br>
+     '0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef': { gasUsed: 1209540, times_cheated: 0 } },<br>
+  su: { gasUsed: 276936 },<br>
+...
 ^C
 
 # Some notes on Ethereum Blockchain, solidity, spectrum sensing, etc

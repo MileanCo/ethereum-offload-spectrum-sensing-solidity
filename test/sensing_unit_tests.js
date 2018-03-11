@@ -98,6 +98,7 @@ contract('ServiceFactory', function(accounts) {
   it(" recieveSensingData from all helpers, complete round, and validate it", function() {
     var serviceFactory;
     var roundId;
+    var round_using = 0;
 
     ServiceFactory.deployed().then(function(instance) {
       serviceFactory = instance;
@@ -121,7 +122,7 @@ contract('ServiceFactory', function(accounts) {
         console.log(tx_obj);
         // execute as a Transaction (need to make changes to data on blockchain)
         console.log("sending account1 "+accounts[1]+" data to contract");
-        return sensingService.helperNotifyDataSent(accounts[1], {from: owner_su});
+        return sensingService.helperNotifyDataSent(accounts[1], round_using, {from: owner_su});
 
 
       }).then(function(tx_obj) {
@@ -137,7 +138,7 @@ contract('ServiceFactory', function(accounts) {
 
         console.log("sending account2 "+accounts[2]+" data to contract");
         // execute as a Transaction (need 2 make changes)
-        return sensingService.helperNotifyDataSent(accounts[2], {from: owner_su});
+        return sensingService.helperNotifyDataSent(accounts[2], round_using, {from: owner_su});
 
       }).then(function(tx_obj) {
         console.log("checking if RoundCompleted and NotifyUsersToValidate events occurred");
@@ -154,7 +155,8 @@ contract('ServiceFactory', function(accounts) {
         var r_index = 0;
         var cheaters = get_cheaters_round(r_index);
         console.log(cheaters);
-        return sensingService.set_helpers_cheaters(cheaters, r_index, {from: owner_su});
+        //return sensingService.set_helpers_cheaters(cheaters, r_index, {from: owner_su});
+        return sensingService.penalize_cheaters(cheaters, r_index, {from: owner_su});
 
 
       }).then(function(tx_obj) {
