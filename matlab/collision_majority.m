@@ -1,4 +1,4 @@
-function [ no_collisions, SU_activity, PU_activity ] = collision( SU_activity, PU_activity )
+function [ no_collisions, SU_activity ] = collision_majority( SU_activity, PU_activity )
 %COLLISION Summary of this function goes here
 %   Detailed explanation goes here
     no_collisions = 0;

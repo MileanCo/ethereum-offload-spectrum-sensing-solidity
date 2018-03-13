@@ -1,4 +1,4 @@
-function [ result  ] = validate( index, helper_data )
+function [ pu_status ] = validate( index, helper_data )
 %VALIDATE Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -7,10 +7,11 @@ function [ result  ] = validate( index, helper_data )
            values(i) = helper_data(i,index); 
         end
         
+%here the mean itself is the wrong values, since (majority)cheater data is fed as negation of PU        
         if mean(values) > 0.5
-            result = 1;
+            pu_status = 1;
         else
-            result = 0;
+            pu_status = 0;
         end
             
 end
