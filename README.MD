@@ -62,9 +62,6 @@ Amount owed withdrawn: 11000000000000000000 from helper 0xc5fdf4076b8f3a5357c5e3
 ^C
 
 # Some notes on Ethereum Blockchain, solidity, spectrum sensing, etc
-Contracts are like objects in OOP. Each new "transaction" would result in a new Contract being made between interested parties.
-When a user has finished sensing the spectrum, it will call methods on this contract object to send the result back to the original SU.
-This will trigger the payment of the original user to the one who did the work.
-
+Contracts are like objects in the Object-Oriented Programming paradigm. Every time a contract is deployed by the developers, the code for the classes in OOP are deployed in the Ethereum network. In contracts, every time a user wants to set up spectrum sensing offloading, a new Contract is created with the secondary user and set of Helpers, using the code stored on the Ethereum network. Whenever any interaction is done with the contract, such as calling a method, a new "transaction" is generated.
 
 Contracts are stored on the blockchain (database) as "Executable code", and other people can interact with it, depending on their role. This is what happens when you call 'truffle migrate', it moves the code onto the blockchain specified in the config (truffle.js)
